@@ -1,16 +1,8 @@
-/*me: god, please give me the power to explain all this code
-god: vibing with Ed Sheeran's 'I dont care'*/
-
-/*body*/
 body{
   margin: 0%;
   background: #333344;
 }
 
-/*yes, you have to endure all those badly named ids and classes here as well huehuehue*/
-/*but, just for you I kept all the ids and classes in the order as they appeared in html, see how caring I am!*/
-
-/*just some basic styling and neumorphism*/
 #cont{
   margin: auto;
   margin-top: 20px;
@@ -39,7 +31,7 @@ body{
   font-weight: 200;
   text-shadow: 1px 1px 1px rgba(255,255,255,0.1);
 }
-/*nothing interesting to explain, carry on*/
+
 #changingText{
   padding: 1px !important;
 }
@@ -54,7 +46,7 @@ body{
   animation-iteration-count:infinite;
   animation-direction: alternate-reverse;
 }
-/*just makes my name zappppppppp*/
+
 @keyframes zapp {
   0% {  
     text-shadow: -0.1em 0 0 red, 
@@ -66,9 +58,6 @@ body{
   }
 }
 
-/*I just realised, these ids and classes are not in order as they appear in html, but I am sure you are understanding and will endure through this*/
-
-/*this is for all those spans used for each individual character*/
 .hoverText:hover{
   cursor:default;
   text-shadow: -0.03em 0 0 red, 
@@ -81,7 +70,6 @@ body{
   width: 70px;
 }
 
-/*yes, those weird named divs surrounding my avatar*/
 #test{
   margin:auto;
   margin-top: 140px;
@@ -93,6 +81,7 @@ body{
   animation-iteration-count: infinite;
   animation-timing-function: linear;
 }
+
 #test2{
   margin:auto;
   margin-top: 40px;
@@ -106,8 +95,7 @@ body{
   animation-iteration-count: infinite;
   animation-timing-function: ease-in;
 }
-/*this is where magic happens*/
-/*the two divs have this effect with a delay to give that amazing ripple effect*/
+
 @keyframes ripple {
   0%{
     box-shadow:-1px -1px 3px 2px #252531,
@@ -123,7 +111,6 @@ body{
   }
 }
 
-/*just boring stuff forwards*/
 #welcomeMessage{
   margin: 10px;
   text-align: center;
@@ -136,6 +123,7 @@ body{
   margin: auto;
   margin-top: 20vh;
 }
+
 #project>h1{
   text-align: center;
   padding: 18px;
@@ -148,6 +136,7 @@ body{
   width: 60vw;
   text-shadow: 1px 1px 2px rgba(255,255,255,0.1);
 }
+
 .tabs{
  margin: auto;
  margin-top: 40px;
@@ -161,6 +150,7 @@ body{
  padding: 5px 30px 15px 30px;
   background: #333344;
 }
+
 .tabs:hover{
   animation-name: float;
   animation-duration: 1s;
@@ -168,6 +158,7 @@ body{
   animation-direction: alternate;
   animation-timing-function: linear;
 }
+
 @keyframes float {
   from{
     box-shadow:  12px 12px 24px #262633,
@@ -187,6 +178,7 @@ body{
   box-shadow: inset 12px 12px 18px #262633,
             inset -12px -12px 18px #404055;
 }
+
 .c_button{
 width:20px;
 height:20px;
@@ -271,7 +263,6 @@ box-shadow:  2.5px 2.5px 2px #2b2b3a,
 background: #ecc8ff;
 }
 
-/*wow, such amazing code for the best responsive website and definitely not just hit and trial values*/
 @media screen and (max-width: 1200px) {
   #desc>h1{
     font-size: 25px;
