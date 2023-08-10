@@ -1,8 +1,54 @@
-import { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
-  const changingText = useRef(null);
+  const words = [
+    " am a CS Undergrad",
+    " love problem solving",
+    " am a competitive programmer",
+    " am a developer",
+    " love learning new skills",
+    " wanna be everything at once!",
+  ];
+
+  const [index, setIndex] = useState(0);
+  const [subIndex, setSubIndex] = useState(0);
+  const [blink, setBlink] = useState(true);
+  const [reverse, setReverse] = useState(false);
+
+  useEffect(() => {
+    if (index === words.length - 1 && subIndex === words[index].length) {
+      return;
+    }
+
+    if (
+      subIndex === words[index].length + 1 &&
+      index !== words.length - 1 &&
+      !reverse
+    ) {
+      setReverse(true);
+      return;
+    }
+
+    if (subIndex === 0 && reverse) {
+      setReverse(false);
+      setIndex((prev) => prev + 1);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setSubIndex((prev) => prev + (reverse ? -1 : 1));
+    }, Math.max(reverse ? 75 : subIndex === words[index].length ? 1000 : 150, parseInt(Math.random() * 350)));
+
+    return () => clearTimeout(timeout);
+  }, [subIndex, index, reverse]);
+
+  useEffect(() => {
+    const timeout2 = setTimeout(() => {
+      setBlink((prev) => !prev);
+    }, 500);
+    return () => clearTimeout(timeout2);
+  }, [blink]);
 
   return (
     <div>
@@ -27,8 +73,8 @@ function App() {
             <span class="hoverText">. </span>
             <br />
           </h1>
-          <h1 ref={changingText} id="changingText" style={{padding: "0px 80px 80px 80px"}}>
-            I
+          <h1 id="changingText" style={{ padding: "0px 80px 80px 80px" }}>
+            I {`${words[index].substring(0, subIndex)}${blink ? "|" : " "}`}
           </h1>
           <div id="test">
             <div id="test2">
@@ -58,13 +104,17 @@ function App() {
           </a>
           <div class="c_button"></div>
           Multiplayer drawing app with chat functionality and{" "}
-          <span style={{color: "rgba(255, 195, 131, 0.788)"}}>
+          <span style={{ color: "rgba(255, 195, 131, 0.788)" }}>
             Customised
           </span>{" "}
           avatar.
         </div>
         <div class="tabs">
-          <a href="https://connectin-rumd.onrender.com/" target="_blank" rel="noreferrer">
+          <a
+            href="https://connectin-rumd.onrender.com/"
+            target="_blank"
+            rel="noreferrer"
+          >
             <div class="image">
               <img src="SocialMediaClone.png" alt="Social Media Clone" />
             </div>
@@ -76,7 +126,11 @@ function App() {
           Media Clone.
         </div>
         <div class="tabs">
-          <a href="https://github.com/banjobyster/Ray-Tracer" target="_blank" rel="noreferrer">
+          <a
+            href="https://github.com/banjobyster/Ray-Tracer"
+            target="_blank"
+            rel="noreferrer"
+          >
             <div class="image">
               <img src="RayTracerImage100Sampling.png" alt="Ray Tracer" />
             </div>
@@ -119,7 +173,11 @@ function App() {
           in an unweighted path.
         </div>
         <div class="tabs">
-          <a href="https://banjobyster.itch.io/asteroids3d" target="_blank" rel="noreferrer">
+          <a
+            href="https://banjobyster.itch.io/asteroids3d"
+            target="_blank"
+            rel="noreferrer"
+          >
             <div class="image">
               <img src="asteroidsGame.png" alt="Asteroids Game" />
             </div>
@@ -127,7 +185,12 @@ function App() {
           <div class="c_button"></div>
           The <span style={{ color: "goldenrod" }}> classic</span> asteroids
           game redesigned in{" "}
-          <span style={{textShadow: "-0.35px -0.35px 1px #a9a9e0, 0.35px 0.35px 1px #000000"}}>
+          <span
+            style={{
+              textShadow:
+                "-0.35px -0.35px 1px #a9a9e0, 0.35px 0.35px 1px #000000",
+            }}
+          >
             {" "}
             3D
           </span>
@@ -208,10 +271,18 @@ function App() {
           >
             <i class="fa fa-linkedin"></i>
           </a>
-          <a href="https://github.com/banjobyster" target="_blank" rel="noreferrer">
+          <a
+            href="https://github.com/banjobyster"
+            target="_blank"
+            rel="noreferrer"
+          >
             <i class="fa fa-github"></i>
           </a>
-          <a href="https://www.instagram.com/bakshi_sayan/" target="_blank" rel="noreferrer">
+          <a
+            href="https://www.instagram.com/bakshi_sayan/"
+            target="_blank"
+            rel="noreferrer"
+          >
             <i class="fa fa-instagram"></i>
           </a>
         </div>
