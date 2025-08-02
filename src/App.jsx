@@ -217,38 +217,10 @@ function App() {
       <div id="About_Me">
         <h1>About Me</h1>
         <img src="linkedin.png" alt="my photo" />
-        Hello! My name is Sayan Bakshi and I am currently an undergraduate
-        student pursuing a Bachelor's degree in Computer Science and Engineering
-        from Panjab University.
+        Hello everyone. I am Sayan Bakshi, a computer science graduate with experience in full stack development. I have worked across various steps of the software development lifecycle as part of my internships, with exposure to documentation, testing and deployment as well.
         <br />
         <br />
-        I have a strong passion for technology and programming, and have honed
-        my skills in several programming languages, including C/C++, HTML, CSS,
-        JavaScript, and SQL. Additionally, I have hands-on experience with the
-        MERN stack. I am also just starting out in the world of cloud computing
-        and have a beginner's understanding of AWS, demonstrating my versatility
-        and commitment to staying up-to-date with industry advancements. I also
-        have a strong foundation in data structures and algorithms along with
-        understanding of OOPS, OS and DBMS.
-        <br />
-        <br />
-        I have practical experience working in a startup, where I was
-        responsible for building the first version of their web application and
-        deploying it over the cloud. This hands-on experience has taught me the
-        importance of teamwork, attention to detail, and efficient
-        problem-solving.
-        <br />
-        <br />
-        Aside from my professional work, I am also an avid lover of competitive
-        programming. The thrill of racing against the clock to solve a problem
-        continues to drive me every day. Competitive programming and development
-        both, got the curious little kid inside me awake again, experimenting
-        with things knowing no bounds.
-        <br />
-        <br />
-        Thank you for visiting my portfolio. I am excited to continue my
-        education and professional development as I work towards my goal of
-        becoming a skilled software engineer.
+        I enjoy learning new things, and the process of building things ground up. I also find delight participating in competitive coding contests and building games. I would love to connect and chat with amazing individuals like you.
       </div>
 
       <div id="footer">

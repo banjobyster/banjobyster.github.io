@@ -1,70 +1,97 @@
-# Getting Started with Create React App
+# Sayan Bakshi's Portfolio
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Welcome to my personal portfolio website! This is a React-based portfolio showcasing my projects, skills, and experience as a software engineer.
 
-## Available Scripts
+## 🚀 About Me
 
-In the project directory, you can run:
+I am Sayan Bakshi, a computer science graduate with experience in full stack development. I have worked across various steps of the software development lifecycle as part of my internships, with exposure to documentation, testing and deployment as well.
 
-### `npm start`
+I enjoy learning new things, and the process of building things ground up. I also find delight participating in competitive coding contests and building games.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🛠️ Tech Stack
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Frontend**: React 19, Vite
+- **Styling**: CSS3 with custom animations
+- **Deployment**: GitHub Pages
+- **Icons**: Font Awesome
 
-### `npm test`
+## 📁 Project Structure
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```
+banjobyster.github.io/
+├── src/
+│   ├── App.jsx          # Main application component
+│   ├── App.css          # Styles for the application
+│   ├── main.jsx         # Entry point for Vite
+│   └── index.css        # Global styles
+├── public/
+│   ├── favicon.ico      # Website favicon
+│   ├── avatarFace.png   # Profile image
+│   ├── linkedin.png     # LinkedIn profile image
+│   └── [project images] # Project screenshots
+├── index.html           # HTML entry point
+├── vite.config.js       # Vite configuration
+└── package.json         # Dependencies and scripts
+```
 
-### `npm run build`
+## 🚀 Getting Started
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Prerequisites
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- Node.js 18+ 
+- npm or yarn
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Installation
 
-### `npm run eject`
+1. Clone the repository:
+```bash
+git clone https://github.com/banjobyster/banjobyster.github.io.git
+cd banjobyster.github.io
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. Install dependencies:
+```bash
+npm install
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+3. Start the development server:
+```bash
+npm run dev
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+4. Open [http://localhost:5173](http://localhost:5173) to view it in the browser.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 📦 Available Scripts
 
-## Learn More
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run deploy` - Build and deploy to GitHub Pages
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 🌐 Deployment
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+The website is automatically deployed to GitHub Pages when you push to the main branch. The deployment process:
 
-### Code Splitting
+1. Builds the project using Vite
+2. Deploys the `dist` folder to the `gh-pages` branch
+3. GitHub Pages serves the content from the `gh-pages` branch
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Manual Deployment
 
-### Analyzing the Bundle Size
+To manually deploy:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```bash
+npm run deploy
+```
 
-### Making a Progressive Web App
+## 📧 Contact
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- **Email**: sayanbakshi2002@gmail.com
+- **LinkedIn**: [Sayan Bakshi](https://www.linkedin.com/in/sayan-bakshi-103546204/)
+- **GitHub**: [banjobyster](https://github.com/banjobyster)
+- **Instagram**: [bakshi_sayan](https://www.instagram.com/bakshi_sayan/)
 
-### Advanced Configuration
+## 📝 License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This project is open source and available under the [MIT License](LICENSE).
