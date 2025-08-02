@@ -71,7 +71,9 @@ npm run dev
 
 ## 🌐 Deployment
 
-The website is automatically deployed to GitHub Pages when you push to the main branch. The deployment process:
+The website is deployed to GitHub Pages using the `gh-pages` package. The deployment process is **manual** and requires running the deploy command after making changes.
+
+### Deployment Process
 
 1. Builds the project using Vite
 2. Deploys the `dist` folder to the `gh-pages` branch
@@ -79,11 +81,13 @@ The website is automatically deployed to GitHub Pages when you push to the main 
 
 ### Manual Deployment
 
-To manually deploy:
+To deploy your changes:
 
 ```bash
 npm run deploy
 ```
+
+**Note**: This command will automatically run the build process and then deploy to GitHub Pages. Make sure all your changes are committed to your main branch before deploying.
 
 ## 📧 Contact
 
