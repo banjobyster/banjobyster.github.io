@@ -1,0 +1,32 @@
+{
+  "_comment": "Powers this repo's card on banjobyster.github.io. See README.md in this folder. Wrap **words** in double asterisks to accent them.",
+  "schemaVersion": 1,
+
+  "title": "Project Title",
+  "tagline": "One short line shown under the title",
+  "description": "A sentence or two about the project. Wrap **key words** to accent them.",
+  "highlights": [
+    "First notable thing about it",
+    "Second notable thing"
+  ],
+
+  "category": "Web",
+  "tags": ["Tech", "Stack", "Here"],
+  "status": "complete",
+  "year": 2024,
+  "role": "Solo",
+
+  "demo": "https://example.com/live-demo",
+  "repo": null,
+  "video": "",
+  "article": "",
+
+  "cover": "cover.png",
+  "thumbnail": "",
+  "gallery": [],
+
+  "order": 10,
+  "featured": true,
+  "pinned": false,
+  "accent": "rgba(131, 216, 255, 0.9)"
+}

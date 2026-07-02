@@ -12,6 +12,7 @@ I enjoy learning new things, and the process of building things ground up. I als
 
 - **Frontend**: React 19, Vite
 - **Styling**: CSS3 with custom animations
+- **Project data**: Read live from each repo's `portfolio/` folder (GitHub API + raw content)
 - **Deployment**: GitHub Pages
 - **Icons**: Font Awesome
 
@@ -20,19 +21,40 @@ I enjoy learning new things, and the process of building things ground up. I als
 ```
 banjobyster.github.io/
 ├── src/
-│   ├── App.jsx          # Main application component
-│   ├── App.css          # Styles for the application
-│   ├── main.jsx         # Entry point for Vite
-│   └── index.css        # Global styles
-├── public/
-│   ├── favicon.ico      # Website favicon
-│   ├── avatarFace.png   # Profile image
-│   ├── linkedin.png     # LinkedIn profile image
-│   └── [project images] # Project screenshots
-├── index.html           # HTML entry point
-├── vite.config.js       # Vite configuration
-└── package.json         # Dependencies and scripts
+│   ├── App.jsx              # Page layout (hero, projects, about, footer)
+│   ├── App.css              # All styles
+│   ├── main.jsx             # Vite entry point
+│   ├── data/projects.js     # Config + offline FALLBACK project list
+│   ├── hooks/useProjects.js # Repo-driven data fetching
+│   ├── lib/github.js        # GitHub API + raw-content helpers
+│   ├── lib/text.jsx         # **highlight** renderer for descriptions
+│   └── components/          # ProjectCard, RepoCard
+├── public/                  # favicon + fallback project images
+├── templates/portfolio/     # Template for a repo's portfolio/ folder
+├── index.html               # HTML entry point
+├── vite.config.js           # Vite configuration
+└── package.json             # Dependencies and scripts
 ```
+
+## 🧩 How projects load (repo-driven)
+
+The project cards are **not** hardcoded. On load, the site:
+
+1. Lists the user's GitHub repos (one `api.github.com` call).
+2. For each repo, tries to read `portfolio/project.json` from its **default branch** via
+   `raw.githubusercontent.com` (a CDN — no token, not rate limited).
+   - **Has a `portfolio/` folder →** it becomes a **featured card**, ordered by the manifest's `order`.
+   - **No folder →** it appears in the **"More on GitHub"** section (name, description, language,
+     stars — all from the API).
+3. Covers, descriptions, tags and links all come from each repo's `portfolio/project.json`
+   and `portfolio/cover.*`.
+
+To add or reorder a project you edit that repo's `portfolio/` folder — **no site code changes**.
+See [`templates/portfolio/`](templates/portfolio) for the schema.
+
+If the API list call fails (e.g. the 60-req/hour unauthenticated limit on a shared IP), the site
+falls back to the local list in [`src/data/projects.js`](src/data/projects.js) so the page is
+never empty.
 
 ## 🚀 Getting Started
 

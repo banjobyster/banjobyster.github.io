@@ -24,3 +24,6 @@ dist-ssr
 *.sln
 *.sw?
 .cursorrules
+
+# Claude Code local config
+.claude/
