@@ -6,9 +6,14 @@
 // in-flight maneuvers stay valid while the user scrolls. The synthesized
 // ground (full-width rect at the viewport bottom, like the sandbox #ground)
 // is the one moving surface: its y is updated every frame, and a robot
-// standing on it rides along. Viewport companionship comes from rebuilds
-// only including on-screen platforms, plus an offscreen re-entry drop when
-// the robot's platform scrolls away.
+// standing on it rides along.
+//
+// Viewport companionship without teleports: the compiled graph includes a
+// corridor of platforms ~600px beyond the viewport, so a robot left behind
+// always has a real route back (the cable ladder). The director issues the
+// catch-up route; when the robot is left VERY far behind, it is repositioned
+// only while fully offscreen, onto a corridor platform just beyond the near
+// edge, and still climbs or drops into view on its own legs.
 
 import { Container, Graphics } from 'pixi.js';
 import { createOverlay } from './overlay.js';
@@ -17,11 +22,16 @@ import { Robot } from './robot.js';
 import { RobotRenderer } from './renderer.js';
 import { Effects } from './effects.js';
 import { Director } from './director.js';
-import { makeDrop } from './maneuvers.js';
 import { clamp } from './math.js';
 
 const REBUILD_MS = 150;
-const STRAND_SNAP = 130; // snap silently when the nearest platform is this close
+const CORRIDOR = 600; // graph extends this far beyond the viewport
+const SWAP_SNAP = 130; // silent snap only when a platform ELEMENT is replaced in place
+// Offscreen distances beyond which the robot is quietly moved (while unseen)
+// to just outside the near edge before walking in. Coming down is a fast
+// drop chain, coming up is a slow climb chain, hence the asymmetry.
+const SHORTCUT_ABOVE = 900;
+const SHORTCUT_BELOW = 340;
 
 export async function mountRobot(opts = {}) {
   const getPageState = opts.getPageState || (() => ({ fetch: 'loading' }));
@@ -55,7 +65,15 @@ export async function mountRobot(opts = {}) {
 
   const api = {
     segFor: (el) => (graph ? graph.segments.findIndex((s) => s.rect.el === el) : -1),
-    segsByTag: (tag) => (graph ? graph.segments.filter((s) => s.rect.tag === tag) : []),
+    // Job targets must be on screen; the graph also holds corridor platforms.
+    segsByTag: (tag) => {
+      if (!graph) return [];
+      const sy = window.scrollY;
+      const vh = window.innerHeight;
+      return graph.segments.filter(
+        (s) => s.rect.tag === tag && s.y >= sy - 4 && s.y <= sy + vh - 6,
+      );
+    },
     graph: () => graph,
     getPageState,
     emit,
@@ -68,13 +86,21 @@ export async function mountRobot(opts = {}) {
     const sy = window.scrollY;
     const sx = window.scrollX;
     const vh = window.innerHeight;
+    // Corridor band: the viewport plus CORRIDOR on both sides, stretched to
+    // include wherever the robot currently is, so it always has a real route
+    // back instead of being teleported.
+    let lo = sy - CORRIDOR;
+    let hi = sy + vh + CORRIDOR;
+    if (spawned) {
+      lo = Math.min(lo, robot.bodyY - 100);
+      hi = Math.max(hi, robot.bodyY + 100);
+    }
     const rects = [];
     for (const el of document.querySelectorAll('[data-terrain]')) {
       const r = el.getBoundingClientRect();
       if (r.width < 8) continue;
       const top = r.top + sy;
-      // usable platform = walkable top edge on screen (same rule as check-terrain)
-      if (top < sy - 4 || top > sy + vh - 6) continue;
+      if (top < lo || top > hi) continue;
       rects.push({ x: r.left + sx, y: top, w: r.width, h: r.height, el, tag: el.dataset.terrain });
     }
     rects.push({
@@ -104,17 +130,55 @@ export async function mountRobot(opts = {}) {
     }
   };
 
-  const reenter = () => {
-    // Drop in from above the viewport onto the highest visible real platform.
+  // How far the robot is beyond the viewport edges (0 while visible).
+  const offscreenBy = () => {
     const sy = window.scrollY;
+    const vh = window.innerHeight;
+    if (robot.bodyY < sy) return robot.bodyY - sy; // negative: above
+    if (robot.bodyY > sy + vh) return robot.bodyY - (sy + vh); // positive: below
+    return 0;
+  };
+
+  // Quietly reposition the robot WHILE FULLY OFFSCREEN onto a corridor
+  // platform just beyond the near viewport edge, facing inward. The user
+  // never sees this; the entrance is always a real climb or drop chain.
+  const shortcutPlace = () => {
+    const sy = window.scrollY;
+    const vh = window.innerHeight;
+    const above = robot.bodyY < sy + vh / 2;
+    const zones = above
+      ? [
+          [sy - 520, sy - 140],
+          [sy - CORRIDOR, sy - 60],
+        ]
+      : [
+          [sy + vh + 120, sy + vh + 320],
+          [sy + vh + 60, sy + vh + CORRIDOR],
+        ];
     let best = -1;
-    for (let i = 0; i < graph.segments.length; i++) {
-      const s = graph.segments[i];
-      if (s.rect.tag === 'ground') continue;
-      if (s.x2 - s.x1 < 36) continue;
-      if (best < 0 || s.y < graph.segments[best].y) best = i;
+    for (const [zLo, zHi] of zones) {
+      for (let i = 0; i < graph.segments.length; i++) {
+        const s = graph.segments[i];
+        if (s.rect.tag === 'ground') continue;
+        if (s.x2 - s.x1 < 36) continue;
+        if (s.y < zLo || s.y > zHi) continue;
+        if (
+          best < 0 ||
+          Math.abs((s.x1 + s.x2) / 2 - robot.x) <
+            Math.abs((graph.segments[best].x1 + graph.segments[best].x2) / 2 - robot.x)
+        ) {
+          best = i;
+        }
+      }
+      if (best >= 0) break;
     }
-    if (best < 0) best = groundIx;
+    if (best < 0) {
+      // no corridor platform on that side (should not happen with the rail);
+      // fall back to the nearest surface, still offscreen
+      const near = nearestPointOnTerrain(graph, robot.x, robot.bodyY);
+      if (!near) return;
+      best = near.seg;
+    }
     const s = graph.segments[best];
     const tx = clamp((s.x1 + s.x2) / 2, s.x1 + 4, s.x2 - 4);
     robot.executor.cancel();
@@ -122,15 +186,13 @@ export async function mountRobot(opts = {}) {
     robot.graph = graph;
     robot.seg = best;
     robot.x = tx;
-    robot.bodyY = sy - 70;
-    robot.executor.maneuver = makeDrop(
-      robot,
-      { x: tx - robot.facing * 8, y: sy - 50, seg: best },
-      { x: tx, y: s.y, seg: best },
-    );
-    robot.mode = 'maneuver';
-    robot.setState('startled'); // settles back to idle after landing
-    director.note(`terrain: re-entry drop onto ${s.rect.tag}`);
+    robot.bodyY = s.y - robot.P.standH;
+    robot.mode = 'ground';
+    robot.gait.reset(tx, s.y, robot.facing);
+    if (robot.state === 'wander' || robot.state === 'goto' || robot.state === 'startled') {
+      robot.setState('idle');
+    }
+    director.note(`terrain: offscreen shortcut to ${s.rect.tag} (${above ? 'above' : 'below'})`);
   };
 
   const rebuild = () => {
@@ -156,12 +218,17 @@ export async function mountRobot(opts = {}) {
       if (sameIx >= 0) {
         robot.rebindTerrain(graph, sameIx);
       } else {
+        // The element itself is gone (e.g. skeleton cards swapped for live
+        // ones in place): a tiny snap is invisible; anything else means the
+        // robot is offscreen and gets the corridor shortcut.
         const near = nearestPointOnTerrain(graph, robot.x, robot.bodyY);
-        const sy = window.scrollY;
-        const onScreen =
-          robot.bodyY > sy - 20 && robot.bodyY < sy + window.innerHeight + 20;
-        if (near && onScreen && near.d < STRAND_SNAP) robot.setTerrain(graph);
-        else reenter();
+        if (near && offscreenBy() === 0 && near.d < SWAP_SNAP) robot.setTerrain(graph);
+        else shortcutPlace();
+      }
+      // Left far behind: reposition offscreen so the walk-in stays short.
+      const off = offscreenBy();
+      if ((off < -SHORTCUT_ABOVE || off > SHORTCUT_BELOW) && robot.mode === 'ground') {
+        shortcutPlace();
       }
       director.onTerrainRebuilt();
     }
@@ -177,7 +244,8 @@ export async function mountRobot(opts = {}) {
     rebuild();
     // The robot is already on the hero when the page loads (SPEC 4.4); if the
     // page opens scrolled elsewhere, wake on the platform nearest mid-view.
-    let ix = graph.segments.findIndex((s) => s.rect.tag === 'hero');
+    const heroVis = api.segsByTag('hero');
+    let ix = heroVis.length ? heroVis[0].id : -1;
     if (ix < 0) {
       const near = nearestPointOnTerrain(
         graph,
@@ -251,9 +319,8 @@ export async function mountRobot(opts = {}) {
   let sleepAccum = 0;
   let prevState = null;
 
-  const tick = (ticker) => {
+  const step = (dt) => {
     if (disposed || !spawned) return;
-    const dt = Math.min(ticker.deltaMS / 1000, 0.05);
     const sy = window.scrollY;
     const vh = window.innerHeight;
     world.position.set(-window.scrollX, -sy);
@@ -326,7 +393,7 @@ export async function mountRobot(opts = {}) {
   };
 
   spawn();
-  app.ticker.add(tick);
+  app.ticker.add((ticker) => step(Math.min(ticker.deltaMS / 1000, 0.05)));
 
   const unmount = () => {
     if (disposed) return;
@@ -370,6 +437,11 @@ export async function mountRobot(opts = {}) {
       app,
       graph: () => graph,
       rebuild,
+      // Deterministic sim stepping for occluded tabs where rAF never fires.
+      step: (seconds = 1) => {
+        const n = Math.max(1, Math.round(seconds * 60));
+        for (let i = 0; i < n; i++) step(1 / 60);
+      },
     };
   }
 

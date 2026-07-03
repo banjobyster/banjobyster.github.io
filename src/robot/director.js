@@ -60,6 +60,8 @@ export class Director {
     this.followCool = 0;
     this.curT = 0;
     this.curCool = 0;
+    this.catchingUp = false;
+    this.catchUpCool = 0;
     this.pokes = [];
     this.clicks = [];
     this.gazeT = 0;
@@ -110,9 +112,50 @@ export class Director {
     this.updateBoot(dt, page);
     this.updateHover(dt, s);
     if (this.boot.phase === 'done' && this.hover.phase === 'none') {
-      this.updateCuriosity(dt, s);
-      this.updateAmbient(dt, s, page);
+      // Left outside the viewport: walking back IS the job. No teleports;
+      // the corridor graph guarantees a real route (the cable ladder).
+      const off = R.bodyY < s.scrollY - 40 || R.bodyY > s.scrollY + s.vh + 40;
+      if (off) {
+        this.updateCatchUp(dt, s);
+      } else {
+        this.catchingUp = false;
+        this.updateCuriosity(dt, s);
+        this.updateAmbient(dt, s, page);
+      }
     }
+  }
+
+  updateCatchUp(dt, s) {
+    const R = this.R;
+    this.catchUpCool = Math.max(0, this.catchUpCool - dt);
+    if (this.catchingUp || this.catchUpCool > 0 || R.mode !== 'ground') return;
+    if (R.state !== 'idle' && R.state !== 'sleep' && R.state !== 'wander') return;
+    const g = this.api.graph();
+    let best = null;
+    for (const seg of g.segments) {
+      if (seg.rect.tag === 'ground') continue;
+      if (seg.x2 - seg.x1 < 36) continue;
+      if (seg.y < s.scrollY + 60 || seg.y > s.scrollY + s.vh - 60) continue;
+      const cx = (seg.x1 + seg.x2) / 2;
+      if (!best || Math.abs(cx - R.x) < Math.abs((best.x1 + best.x2) / 2 - R.x)) best = seg;
+    }
+    if (!best) best = g.segments.find((seg) => seg.rect.tag === 'ground');
+    if (!best) return;
+    this.catchingUp = true;
+    this.catchUpCool = 0.6; // never re-issue in a tight loop (instant/empty routes)
+    this.note('catch-up: heading back into view');
+    R.commandGotoSeg(best.id, clamp(R.x, best.x1 + 4, best.x2 - 4), {
+      noise: 0.15,
+      quiet: true,
+      speed: R.P.walkSpeed * 1.25,
+      onDone: () => {
+        this.catchingUp = false;
+      },
+      onFail: () => {
+        this.catchingUp = false;
+        this.catchUpCool = 1.5; // do not spin on an unreachable target
+      },
+    });
   }
 
   // Cursor interplay (SPEC 4.4): a cursor sitting still nearby draws a slow,
@@ -354,7 +397,7 @@ export class Director {
         }
         if (this.amb.timer <= 0 && R.state === 'idle') {
           this.amb.timer = randRange(5, 9);
-          R.startWander();
+          this.wanderVisible(s);
         }
         break;
       }
@@ -370,7 +413,7 @@ export class Director {
               quiet: true,
             });
           } else {
-            R.startWander();
+            this.wanderVisible(s);
           }
         }
         break;
@@ -425,7 +468,7 @@ export class Director {
                 },
               });
             } else {
-              R.startWander();
+              this.wanderVisible(s);
             }
           }
         }
@@ -492,6 +535,23 @@ export class Director {
     }
   }
 
+  // Idle wander bounded to on-screen platforms; the raw robot.startWander()
+  // would happily pick a corridor node beyond the viewport.
+  wanderVisible(s) {
+    const R = this.R;
+    const g = this.api.graph();
+    const candidates = g.segments.filter(
+      (seg) =>
+        seg.x2 - seg.x1 >= 36 &&
+        seg.y >= s.scrollY + 40 &&
+        seg.y <= s.scrollY + s.vh - 20 &&
+        (seg.id !== R.seg || seg.x2 - seg.x1 > 120),
+    );
+    if (!candidates.length) return;
+    const seg = choose(candidates);
+    R.commandGotoSeg(seg.id, randRange(seg.x1 + 8, seg.x2 - 8), { noise: 1, quiet: true });
+  }
+
   inSection(name, docY) {
     const entry = this.sectionEls.find(([n]) => n === name);
     if (!entry) return false;
@@ -545,6 +605,7 @@ export class Director {
 
   onTerrainRebuilt() {
     // The rebind canceled any route; re-dispatch positional work.
+    this.catchingUp = false; // re-issued next frame if still offscreen
     if (this.boot.phase === 'walk') this.boot.phase = 'start';
 
     const h = this.hover;
