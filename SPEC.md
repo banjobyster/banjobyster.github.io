@@ -269,6 +269,22 @@ is reachable from the viewport-bottom ground at every scroll position.
     Mono via fontsource).
 - M2 integration. DOM-rect terrain, viewport companionship, section jobs, fetch-state
   theater, error path. GATE: full walkthrough on desktop.
+  - STATUS 2026-07-03 (M2 build session): BUILT, pending owner desktop walkthrough.
+    As built: facade at `src/robot/facade.js` (mountRobot -> handle with unmount,
+    goto, setExpression, on; page state read through a getPageState callback so
+    React never pushes into robot internals); behavior brain at
+    `src/robot/director.js` (boot plug-in theater, hovered-card plug with accent
+    face tint, hero follow + escalating click reactions, hatch reel-in, About
+    portrait sit, contact wave/sleep, cursor curiosity, poke escalation);
+    `src/robot/effects.js` (plug cable to live DOM ports, sparks, Zzz).
+    Coordinate model: robot logic runs in DOCUMENT space and the Pixi world is
+    offset by -scroll each frame, so routes and in-flight maneuvers survive
+    scrolling; the synthesized ground rides the viewport bottom edge; terrain
+    rebuilds rebind the robot to the element it stood on (no teleports) and a
+    stranded robot re-enters with a drop from offscreen. `?robot=debug` exposes
+    window.__robot plus a director event trail. Verified: live-DOM terrain
+    connectivity PASS at 1280/768/390/383 widths with live repo data, sandbox
+    desktop + mobile regression OK, production build OK, no console errors.
 - M3 polish. Mobile profile, easter eggs, timing passes, performance validation, QA
   against the fallback ladder.
 
