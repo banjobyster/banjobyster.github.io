@@ -27,9 +27,10 @@ import { compileTerrain, nearestPointOnTerrain } from './engine/terrain.js';
 import { Robot } from './engine/robot.js';
 import { RobotRenderer } from './engine/renderer.js';
 import { CRT_TODDLER } from './characters/crt-toddler.js';
+import { GLITCH_IMP } from './characters/glitch-imp.js';
 import { Effects } from './effects.js';
 import { Director } from './director.js';
-import { defaultBehaviors, ambientBehaviors } from './behaviors/index.js';
+import { defaultBehaviors, ambientBehaviors, villainBehaviors } from './behaviors/index.js';
 import { clamp } from './engine/math.js';
 
 const REBUILD_MS = 150;
@@ -59,11 +60,13 @@ export async function mountRobot(opts = {}) {
   const world = new Container();
   app.stage.addChild(world);
 
-  // Cast list: default is the lone CRT toddler with the full site set. Extra
-  // robots without an explicit behavior set get the ambient one; only the
-  // primary should ever run boot/hover/pipeline theater.
+  // Cast list: by default the hero CRT toddler (full site set) plus the glitch
+  // imp villain (its own ambient + sabotage set, no boot/hover/pipeline). A
+  // caller can override with opts.robots; extra robots without an explicit set
+  // get the plain ambient one.
   const specs = opts.robots || [
     { character: opts.character || CRT_TODDLER, behaviors: opts.behaviors },
+    { character: GLITCH_IMP, behaviors: villainBehaviors() },
   ];
 
   let graph = null;

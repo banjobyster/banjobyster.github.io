@@ -16,8 +16,11 @@
 //   onTerrainRebuilt?(ctx)
 //
 // The priority ladder encodes the SPEC 4.2b arbitration:
-//   boot (100) > hover-card (80) > catch-up (60) > repair (55)
-//   > pipeline (50) > reactions (40) > curiosity (30) > section ambience (10)
+//   hero:    boot (100) > hover-card (80) > catch-up (60) > repair (55)
+//            > pipeline (50) > reactions (40) > chase (35) > curiosity (30)
+//            > section ambience (10)
+//   villain: flee (90) > exit-return (70) > catch-up (60) > sabotage (50)
+//            > reactions (40) > roam (10)
 
 import { boot } from './boot.js';
 import { hoverCard } from './hover-card.js';
@@ -25,7 +28,12 @@ import { catchUp } from './catch-up.js';
 import { repair } from './repair.js';
 import { pipeline } from './pipeline.js';
 import { reactions } from './reactions.js';
+import { chase } from './chase.js';
 import { curiosity } from './curiosity.js';
+import { flee } from './flee.js';
+import { exitReturn } from './exit-return.js';
+import { sabotage } from './sabotage.js';
+import { randRange, choose } from '../engine/math.js';
 import {
   heroAmbience,
   featuredAmbience,
@@ -42,6 +50,7 @@ export function defaultBehaviors() {
     repair(),
     pipeline(),
     reactions(),
+    chase(),
     curiosity(),
     heroAmbience(),
     featuredAmbience(),
@@ -57,4 +66,50 @@ export function defaultBehaviors() {
 // stacking on the same authored spot reads as a bug.
 export function ambientBehaviors() {
   return [catchUp(), reactions(), curiosity(), heroAmbience(), featuredAmbience(), moreAmbience()];
+}
+
+// A light idle skitter for the villain between its errands, so it is not
+// frozen in place while waiting out a cooldown. Low priority: any villain job
+// (flee, exit, sabotage) outranks it.
+function villainRoam() {
+  return {
+    name: 'villain-roam',
+    priority: 10,
+    init() {
+      this.timer = randRange(2, 4);
+    },
+    update(ctx) {
+      const { R, api, sensors: s } = ctx;
+      if (ctx.owner) return false;
+      this.timer -= ctx.dt;
+      if (this.timer <= 0 && R.state === 'idle' && R.mode === 'ground') {
+        this.timer = randRange(4, 8);
+        const g = api.graph();
+        const cand = g.segments.filter(
+          (seg) =>
+            seg.rect.tag !== 'ground' &&
+            seg.x2 - seg.x1 >= 36 &&
+            seg.y >= s.scrollY + 40 &&
+            seg.y <= s.scrollY + s.vh - 20 &&
+            (seg.id !== R.seg || seg.x2 - seg.x1 > 120),
+        );
+        if (cand.length) {
+          const seg = choose(cand);
+          R.commandGotoSeg(seg.id, randRange(seg.x1 + 8, seg.x2 - 8), {
+            noise: 0.8,
+            quiet: true,
+            speed: R.P.wanderSpeed * 1.3,
+          });
+        }
+      }
+      return false;
+    },
+  };
+}
+
+// The villain set: its own director, sharing one "mind" so sabotage and flee
+// can hand the exit beat to exit-return. No boot / hover / pipeline / repair.
+export function villainBehaviors() {
+  const mind = { wantsExit: false };
+  return [flee(mind), exitReturn(mind), catchUp(), sabotage(mind), reactions(), villainRoam()];
 }

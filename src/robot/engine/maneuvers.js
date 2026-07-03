@@ -257,6 +257,41 @@ export function makeWave(R) {
   };
 }
 
+// A quick tamper: hunch over the spot in front, jab the front-near leg at it
+// in a fast fiddling motion, head twitching. Stays on the current segment and
+// ends back standing. Used by the villain when it messes with a station; it
+// is an in-place authored move, not a traversal stumble.
+export function makeTamper(R, dur = 0.8) {
+  const P = R.P;
+  const S = P.scale;
+  const dir = R.facing;
+  const seg = R.graph.segments[R.seg];
+  const baseY = seg.y - P.standH;
+  let t = 0;
+
+  return {
+    type: 'tamper',
+    update(dt) {
+      t += dt;
+      const u = clamp(t / dur, 0, 1);
+      const settle = u < 0.12 ? u / 0.12 : u > 0.85 ? (1 - u) / 0.15 : 1;
+      R.rot = dir * 0.07 * settle; // hunch and lean in
+      R.bodyY = baseY + 3 * S * settle;
+      R.headWiggle = Math.sin(t * 34) * 0.06 * settle;
+      for (const i of [1, 2, 3]) setFoot(R, i, R.x + P.footRestX[i] * dir * 0.9, seg.y);
+      // front-near leg jabs at the panel
+      const jab = (Math.sin(t * 22) * 0.5 + 0.5) * settle;
+      setFoot(R, 0, R.x + dir * (11 + jab * 7) * S, R.bodyY + (2 - jab * 5) * S);
+      if (u >= 1) {
+        R.headWiggle = 0;
+        R.finishManeuver(R.seg, R.x, 40 * S);
+        return true;
+      }
+      return false;
+    },
+  };
+}
+
 // Corner climb: rear up against the wall, scramble up it, mantle over.
 export function makeClimb(R, from, to) {
   const P = R.P;

@@ -19,6 +19,18 @@ export function catchUp() {
     update(ctx) {
       const { d, R, api, sensors: s } = ctx;
       this.cool = Math.max(0, this.cool - ctx.dt);
+
+      // Self-heal the walking flag: another behavior (the villain's flee,
+      // exit-return, or sabotage) can preempt our walk back by issuing its own
+      // goto, which cancels the executor without firing our onDone/onFail. That
+      // would strand walking = true and stop us re-issuing forever. On the hero
+      // a scroll-driven rebuild resets it via onTerrainRebuilt, but a robot
+      // parked offscreen with no scroll never gets one. If we think we are
+      // walking yet no route is live, clear it.
+      if (this.walking && R.mode === 'ground' && !R.executor.active && !R.pendingGoal) {
+        this.walking = false;
+      }
+
       if (ctx.owner) return false;
 
       // Below the fold, judge by the standing surface, not bodyY: the body

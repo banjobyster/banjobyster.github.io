@@ -51,6 +51,45 @@ export function findStations(api, wantState = null) {
   return out;
 }
 
+// The nearest OTHER robot in the cast (the facade exposes api.robots()), with
+// the document-space distance to it. Used by the villain's flee (watching the
+// hero) and the hero's chase (watching the villain). Returns null when alone.
+export function nearestOther(api, self) {
+  const others = (api.robots ? api.robots() : []).filter((r) => r !== self);
+  let best = null;
+  for (const r of others) {
+    const d = Math.hypot(r.x - self.x, r.bodyY - self.bodyY);
+    if (!best || d < best.dist) best = { robot: r, dist: d };
+  }
+  return best;
+}
+
+// A reachable platform beyond a viewport edge, for leaving the scene on foot.
+// prefer: 'below' | 'above'. Falls back to the other side, then to any
+// offscreen platform. Returns { seg, x } or null. Never teleports: the caller
+// routes to it through the graph (the corridor band makes the exit legal).
+export function offscreenTarget(api, R, prefer, planRoute) {
+  const g = api.graph();
+  if (!g) return null;
+  const sy = window.scrollY;
+  const vh = window.innerHeight;
+  const from = { seg: R.seg, x: R.x };
+  const band = (side) =>
+    side === 'below' ? [sy + vh + 40, sy + vh + 560] : [sy - 560, sy - 40];
+  const sides = prefer === 'above' ? ['above', 'below'] : ['below', 'above'];
+  for (const side of sides) {
+    const [lo, hi] = band(side);
+    const cand = g.segments
+      .filter((s) => s.rect.tag !== 'ground' && s.x2 - s.x1 >= 36 && s.y >= lo && s.y <= hi)
+      .sort((a, b) => Math.abs((a.x1 + a.x2) / 2 - R.x) - Math.abs((b.x1 + b.x2) / 2 - R.x));
+    for (const s of cand) {
+      const x = (s.x1 + s.x2) / 2;
+      if (planRoute(g, from, { seg: s.id, x })) return { seg: s.id, x, y: s.y };
+    }
+  }
+  return null;
+}
+
 // Face palette [off, dim, main, hot] derived from an accent color.
 export function accentPalette(col) {
   const r = (col >> 16) & 255;
