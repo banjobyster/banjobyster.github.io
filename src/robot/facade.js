@@ -33,6 +33,16 @@ const SWAP_SNAP = 130; // silent snap only when a platform ELEMENT is replaced i
 const SHORTCUT_ABOVE = 900;
 const SHORTCUT_BELOW = 340;
 
+// window.__robot bookkeeping (?robot=debug): StrictMode mounts twice and the
+// async mounts resolve in either order, so a dead instance could clobber the
+// global after the live one set it. The registry keeps the global pointing
+// at a mounted instance no matter the resolve/unmount interleaving.
+let debugRegistry = [];
+const exposeDebug = () => {
+  if (debugRegistry.length) window.__robot = debugRegistry[debugRegistry.length - 1];
+  else delete window.__robot;
+};
+
 export async function mountRobot(opts = {}) {
   const getPageState = opts.getPageState || (() => ({ fetch: 'loading' }));
   const debug = new URLSearchParams(location.search).get('robot') === 'debug';
@@ -395,9 +405,12 @@ export async function mountRobot(opts = {}) {
   spawn();
   app.ticker.add((ticker) => step(Math.min(ticker.deltaMS / 1000, 0.05)));
 
+  let onUnmountDebug = null;
+
   const unmount = () => {
     if (disposed) return;
     disposed = true;
+    if (onUnmountDebug) onUnmountDebug();
     clearTimeout(rebuildTimer);
     ro.disconnect();
     window.removeEventListener('pointermove', onPointerMove);
@@ -429,7 +442,7 @@ export async function mountRobot(opts = {}) {
   };
 
   if (debug) {
-    window.__robot = {
+    const dbg = {
       handle,
       robot,
       director,
@@ -442,6 +455,12 @@ export async function mountRobot(opts = {}) {
         const n = Math.max(1, Math.round(seconds * 60));
         for (let i = 0; i < n; i++) step(1 / 60);
       },
+    };
+    debugRegistry.push(dbg);
+    exposeDebug();
+    onUnmountDebug = () => {
+      debugRegistry = debugRegistry.filter((d) => d !== dbg);
+      exposeDebug();
     };
   }
 
