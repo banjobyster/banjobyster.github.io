@@ -57,7 +57,7 @@ export class Face {
       if (this.blinkTimer <= 0) this.blinkPhase = 0.0001;
     }
 
-    if (this.expr === 'glitch') this.dirty = true; // animates every frame
+    if (this.expr === 'glitch' || this.expr === 'sync') this.dirty = true; // animate every frame
     if (this.dirty) this.render();
   }
 
@@ -144,6 +144,26 @@ export class Face {
       case 'sleepy': {
         this.block(3, 5, 3, 2, 1);
         this.block(10, 5, 3, 2, 1);
+        break;
+      }
+      case 'portrait': {
+        // A tiny pixel portrait of Sayan: hair, face, bright eyes, a smile,
+        // shoulders. Static; shown once while sitting beside the About text.
+        this.block(5, 1, 6, 1, 2); // hair top
+        this.block(4, 2, 8, 1, 2); // hair
+        for (const r of [3, 4, 5]) {
+          this.px(4, r, 2); // hair sides
+          this.px(11, r, 2);
+          this.block(5, r, 6, 1, 1); // face
+        }
+        this.px(6, 5, 3); // eyes
+        this.px(9, 5, 3);
+        this.block(5, 6, 6, 1, 1);
+        this.block(5, 7, 6, 1, 1);
+        this.block(6, 7, 4, 1, 2); // smile
+        this.block(6, 8, 4, 1, 1); // chin
+        this.block(7, 9, 2, 1, 1); // neck
+        this.block(3, 10, 10, 2, 2); // shoulders
         break;
       }
       default:

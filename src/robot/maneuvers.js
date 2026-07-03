@@ -220,6 +220,43 @@ export function makeDrop(R, from, to, opts = {}) {
   };
 }
 
+// A friendly wave: settle back on three legs and swing the front-near leg
+// up beside the head. Used by the contact-section job.
+export function makeWave(R) {
+  const P = R.P;
+  const S = P.scale;
+  const dir = R.facing;
+  const seg = R.graph.segments[R.seg];
+  const baseY = seg.y - P.standH;
+  const dur = 1.6;
+  let t = 0;
+
+  return {
+    type: 'wave',
+    update(dt) {
+      t += dt;
+      const u = clamp(t / dur, 0, 1);
+      const settle = u < 0.14 ? u / 0.14 : u > 0.84 ? (1 - u) / 0.16 : 1;
+      R.rot = -dir * 0.08 * settle;
+      R.bodyY = baseY + 2.5 * S * settle;
+      for (const i of [1, 2, 3]) {
+        setFoot(R, i, R.x + P.footRestX[i] * dir * 0.8, seg.y);
+      }
+      const wave = Math.sin(t * 9) * settle;
+      const hx = R.x + dir * (15 + wave * 5) * S;
+      const hy = R.bodyY - (P.headH * 0.5 + 7 * S) * settle - wave * 3 * S;
+      setFoot(R, 0, hx, settle > 0.05 ? hy : seg.y);
+      R.headWiggle = wave * 0.05;
+      if (u >= 1) {
+        R.headWiggle = 0;
+        R.finishManeuver(R.seg, R.x, 50 * S);
+        return true;
+      }
+      return false;
+    },
+  };
+}
+
 // Corner climb: rear up against the wall, scramble up it, mantle over.
 export function makeClimb(R, from, to) {
   const P = R.P;

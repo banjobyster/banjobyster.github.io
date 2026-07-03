@@ -26,6 +26,7 @@ const COL = {
 export class RobotRenderer {
   constructor(parent, P) {
     this.P = P;
+    this.pix = COL.pix; // face palette; the director may tint it to a card accent
     this.root = new Container();
     parent.addChild(this.root);
 
@@ -88,6 +89,10 @@ export class RobotRenderer {
     this.headC.addChild(glassG);
 
     this.root.addChild(this.shadowG, this.legsFar, this.bodyC, this.legsNear, this.headC);
+  }
+
+  setFacePalette(pix) {
+    this.pix = pix || COL.pix;
   }
 
   // Accordion legs: a stretchy inner core wrapped in hard rings. The rings
@@ -161,7 +166,7 @@ export class RobotRenderer {
       for (let r = 0; r < FACE_H; r++) {
         for (let c = 0; c < FACE_W; c++) {
           const v = buf[r * FACE_W + c];
-          if (v) this.faceG.rect(c + 0.07, r + 0.07, 0.86, 0.86).fill(COL.pix[v]);
+          if (v) this.faceG.rect(c + 0.07, r + 0.07, 0.86, 0.86).fill(this.pix[v]);
         }
       }
       R.face.dirty = false;

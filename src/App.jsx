@@ -4,6 +4,7 @@ import ProjectCard from "./components/ProjectCard";
 import RepoCard from "./components/RepoCard";
 import Cable from "./components/Cable";
 import ThemeToggle from "./components/ThemeToggle";
+import RobotOverlay from "./components/RobotOverlay";
 import {
   IconGitHub,
   IconLinkedIn,
@@ -35,6 +36,11 @@ function App() {
     <div id="page">
       <ThemeToggle />
       <Cable />
+      <RobotOverlay
+        fetchState={state}
+        repoCount={repos.length}
+        featuredCount={featured.length}
+      />
 
       <header className="hero">
         <p className="eyebrow mono">SAYAN BAKSHI · PORTFOLIO</p>

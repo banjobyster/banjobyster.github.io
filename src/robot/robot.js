@@ -52,6 +52,8 @@ export class Robot {
     this.arrived = true;
     this.speedCap = P.walkSpeed;
     this.noise = 0.5;
+    this.autoWander = true; // the site director turns this off and drives moves itself
+    this.sitTarget = null; // heightScale target while sitting (null = stand tall)
     this.forceStumble = false;
     this.idleTimer = randRange(2.5, 6);
     this.sleepTimer = 30;
@@ -99,6 +101,28 @@ export class Robot {
     }
   }
 
+  // Rebind to a freshly compiled graph while staying on the same platform
+  // (the segment at segIx must be the robot's current surface, possibly moved
+  // by scroll/reflow). Feet and body shift with it; no gait reset, no snap.
+  rebindTerrain(graph, segIx) {
+    const oldY = this.graph ? this.surfaceY : null;
+    this.graph = graph;
+    this.seg = segIx;
+    this.executor.cancel();
+    this.pendingGoal = null;
+    this.mode = 'ground';
+    const s = this.segment;
+    this.x = clamp(this.x, s.x1 + 2, s.x2 - 2);
+    const dy = oldY == null ? 0 : s.y - oldY;
+    if (dy) {
+      this.bodyY += dy;
+      for (const f of this.gait.feet) f.y += dy;
+    }
+    if (this.state === 'wander' || this.state === 'goto' || this.state === 'startled') {
+      this.setState('idle');
+    }
+  }
+
   consumeForcedStumble() {
     const f = this.forceStumble;
     this.forceStumble = false;
@@ -116,22 +140,42 @@ export class Robot {
     this.stateT = 0;
   }
 
-  commandGoto(px, py) {
+  commandGoto(px, py, opts = {}) {
     this.wakeIfSleeping();
     if (!this.graph) return false;
     const goal = nearestPointOnTerrain(this.graph, px, py);
     if (!goal) return false;
+    return this._planTo(goal, opts);
+  }
+
+  // Route to an exact segment, bypassing nearest-point snapping. The director
+  // uses this to target a specific DOM platform (a card's port, the hatch).
+  commandGotoSeg(segIx, x, opts = {}) {
+    this.wakeIfSleeping();
+    if (!this.graph || !this.graph.segments[segIx]) return false;
+    return this._planTo({ seg: segIx, x }, opts);
+  }
+
+  _planTo(goal, opts) {
     const plan = () => {
       const steps = planRoute(this.graph, { seg: this.seg, x: this.x }, goal);
       if (!steps) {
         this.face.set('glitch', 0.4);
         this.setState('idle');
+        if (opts.onFail) opts.onFail();
         return;
       }
-      this.speedCap = this.P.walkSpeed;
-      this.executor.setRoute(steps, { noiseScale: 0.55, onDone: () => this.onArrive() });
+      this.speedCap = opts.speed ?? this.P.walkSpeed;
+      this.executor.setRoute(steps, {
+        noiseScale: opts.noise ?? 0.55,
+        onDone: () => {
+          if (opts.quiet) this.setState('idle');
+          else this.onArrive();
+          if (opts.onDone) opts.onDone();
+        },
+      });
       this.setState('goto');
-      this.face.set('curious', 0.8);
+      if (!opts.quiet) this.face.set('curious', 0.8);
     };
     if (this.mode === 'maneuver') this.pendingGoal = plan;
     else {
@@ -255,7 +299,7 @@ export class Robot {
         break;
       }
       case 'idle': {
-        this.heightScale = lerp(this.heightScale, 1, dt * 4);
+        this.heightScale = lerp(this.heightScale, this.sitTarget ?? 1, dt * 4);
         this.idleTimer -= dt;
         this.sleepTimer -= dt;
         if (cur && (cur.speed > 250 || dCursor < 200)) this.sleepTimer = Math.max(this.sleepTimer, 28);
@@ -272,7 +316,7 @@ export class Robot {
         }
         if (this.idleTimer <= 0) {
           this.idleTimer = randRange(3, 8);
-          this.startWander();
+          if (this.autoWander) this.startWander();
         }
         break;
       }
