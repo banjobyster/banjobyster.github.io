@@ -221,8 +221,12 @@ export async function mountRobot(opts = {}) {
     const y = e.clientY + window.scrollY;
     const dBody = Math.hypot(x - robot.x, y - robot.bodyY);
     const dHead = Math.hypot(x - robot.headX, y - robot.headY);
-    if (dBody < 24 || dHead < 36) robot.poke();
-    else director.onPageClick(x, y, e.target);
+    if (dBody < 24 || dHead < 36) {
+      robot.poke();
+      director.onPoke();
+    } else {
+      director.onPageClick(x, y, e.target);
+    }
   };
 
   let lastScrollY = window.scrollY;

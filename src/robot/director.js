@@ -58,6 +58,9 @@ export class Director {
     this.plugFaceT = 0;
     this.amb = { timer: 2.5, phase: null, tug: 0 };
     this.followCool = 0;
+    this.curT = 0;
+    this.curCool = 0;
+    this.pokes = [];
     this.clicks = [];
     this.gazeT = 0;
     this.shrugT = 0;
@@ -107,7 +110,55 @@ export class Director {
     this.updateBoot(dt, page);
     this.updateHover(dt, s);
     if (this.boot.phase === 'done' && this.hover.phase === 'none') {
+      this.updateCuriosity(dt, s);
       this.updateAmbient(dt, s, page);
+    }
+  }
+
+  // Cursor interplay (SPEC 4.4): a cursor sitting still nearby draws a slow,
+  // cautious approach that stops short. Hero has its own follow behavior.
+  updateCuriosity(dt, s) {
+    const R = this.R;
+    const c = s.cursor;
+    this.curCool = Math.max(0, this.curCool - dt);
+    if (!c || this.curCool > 0 || this.section === 'hero' || R.state !== 'idle' || R.mode !== 'ground') {
+      this.curT = 0;
+      return;
+    }
+    const d = Math.hypot(c.x - R.x, c.y - R.bodyY);
+    if (c.speed < 18 && d > 120 && d < 420) {
+      this.curT += dt;
+      if (this.curT > 2.2) {
+        this.curT = 0;
+        this.curCool = randRange(8, 14);
+        const dir = Math.sign(c.x - R.x) || 1;
+        R.face.set('curious', 1.4);
+        R.commandGoto(c.x - dir * 80, c.y, {
+          noise: 0.5,
+          speed: R.P.wanderSpeed * 0.7,
+          quiet: true,
+        });
+        this.note('curiosity: creeping toward the idle cursor');
+      }
+    } else {
+      this.curT = 0;
+    }
+  }
+
+  // Repeat pokes stop being funny to the robot pretty fast.
+  onPoke() {
+    const now = performance.now();
+    this.pokes = this.pokes.filter((t) => now - t < 5000);
+    this.pokes.push(now);
+    if (this.pokes.length >= 3) {
+      this.pokes = [];
+      const R = this.R;
+      R.face.set('glitch', 1.2);
+      this.shrugT = 0.7;
+      this.fx.burst(R.headX, R.headY - 10, 0xf08c3c, 6);
+      const flee = R.x - R.facing * 130;
+      R.commandGoto(flee, R.bodyY, { noise: 0.2, quiet: true, speed: R.P.walkSpeed * 1.3 });
+      this.note('poked too much, storming off');
     }
   }
 
