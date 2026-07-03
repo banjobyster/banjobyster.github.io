@@ -23,6 +23,7 @@ import { RobotRenderer } from './engine/renderer.js';
 import { CRT_TODDLER } from './characters/crt-toddler.js';
 import { Effects } from './effects.js';
 import { Director } from './director.js';
+import { defaultBehaviors } from './behaviors/index.js';
 import { clamp } from './engine/math.js';
 
 const REBUILD_MS = 150;
@@ -89,7 +90,7 @@ export async function mountRobot(opts = {}) {
     getPageState,
     emit,
   };
-  const director = new Director(robot, effects, renderer, api);
+  const director = new Director(robot, effects, renderer, api, opts.behaviors || defaultBehaviors());
 
   // ---------------- terrain ----------------
 
