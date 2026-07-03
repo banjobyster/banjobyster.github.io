@@ -4,17 +4,36 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#e9e5da" />
     <meta
       name="description"
-      content="Sayan Bakshi's Portfolio - Full Stack Developer and Software Engineer"
+      content="Sayan Bakshi, software engineer: backend systems, infrastructure, and platform tooling."
     />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <title>Sayan Bakshi's Portfolio</title>
-    <script type="module" crossorigin src="/assets/index-DdtniEPV.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DOLD09KX.css">
+    <title>Sayan Bakshi</title>
+    <script>
+      // Theme init before first paint: stored preference wins, else system.
+      (function () {
+        var t;
+        try {
+          t = localStorage.getItem("theme");
+        } catch (e) {
+          t = null;
+        }
+        if (t !== "light" && t !== "dark") {
+          t =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+        }
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/main-B0K3fR9l.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/crt-toddler-DwCIePKL.js">
+    <link rel="stylesheet" crossorigin href="/assets/main-Dq9qx297.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"></div>
   </body>
 </html>
