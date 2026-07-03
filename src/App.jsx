@@ -43,7 +43,7 @@ function App() {
       />
 
       <header className="hero">
-        <p className="eyebrow mono">SAYAN BAKSHI · PORTFOLIO</p>
+        <p className="eyebrow mono">PORTFOLIO · REV 3</p>
         <h1 className="heroName" data-terrain="hero">
           Sayan Bakshi
         </h1>
@@ -141,11 +141,12 @@ function App() {
         </h2>
         <div className="aboutBody" data-terrain="about">
           <p>
-            Sayan here. I am a software engineer with full-stack experience,
-            focused on backend systems, infrastructure, and platform tooling.
-            Away from work I enjoy competitive programming and building things
-            from scratch, whether that is a ray tracer in C++ or GPT-2 running
-            in the browser.
+            Sayan here. I like taking systems apart to see what makes them
+            tick, then building my own from scratch; most of the projects
+            above started exactly that way. Day to day that curiosity goes
+            into the server side of products: services, data flows, and the
+            internal tooling other engineers build on. Competitive programming
+            keeps the algorithm muscles honest.
           </p>
           <ul className="chips mono">
             {SKILLS.map((s) => (
