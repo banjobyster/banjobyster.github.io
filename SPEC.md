@@ -146,6 +146,46 @@ is expected to reach satisfies them at EVERY breakpoint:
   meet this, it must provide intermediate steps (ports, chips, decorative ledges) or
   accept the robot only descending through that section.
 
+### 4.2d M1 level design as built (STATUS 2026-07-03, M1 build session; the
+### terrain handoff M2 integrates against)
+
+The M1 layout implements 4.2c with a "cable ladder" pattern. Everything below
+is measured behavior, verified by `scripts/check-terrain.mjs` feeding real DOM
+rects into `compileTerrain` at 1280/768/390/320 widths: every visible platform
+is reachable from the viewport-bottom ground at every scroll position.
+
+- Geometry: a fixed 76px left gutter at every breakpoint holds the dashed
+  cable; content starts at page x=76. The cable's clips are 44x10px rungs at
+  gutter x 6..50 and 22..66 (alternating), spaced uniformly at most 80px apart
+  (the hop rise limit, deliberately tighter than the 95px climb limit, so a
+  rung scrolled off the top can always be replaced by a hop from the rung
+  below). The hero port jack (gutter x 22..66) is rung zero; the footer socket
+  is the rail end, with the last clip 44px above it. Clip generation lives in
+  `clipPositions()` in `src/components/Cable.jsx`; anything in the content
+  column is hoppable from the rail (10px or 26px gap).
+- Hero staircase: name, role line (indented 16px), socials row, and port row
+  stack with tops at most 95px apart and staggered widths for corner approach,
+  so the robot can climb from the port row up to the name.
+- `data-terrain` inventory (value = semantic role for M2 jobs): `clip` (rail
+  rungs), `hero` (name, role, socials), `port` (hero jack, boot plug-in
+  target), `port-row` (the stamp bar; the fetch stamp lives here), `heading`
+  (section header rows, full column width), `card` (featured devices; each has
+  a `.devicePort` visual for the hover plug-in), `hatch` (repo bay above the
+  grid), `repo` (compact repo plates), `about` (portrait sit spot), `contact`
+  (sleep spot), `socket` (cable end).
+- M2 obligations implied by this build: synthesize the ground as a full-width
+  rect at the viewport bottom edge (as the sandbox does with #ground); rebuild
+  terrain on scroll/resize AND on ResizeObserver of the body, since the rail
+  re-measures itself the same way (live data swap, fonts, and images all move
+  the layout); ignore rects mid-animation (repo cards translate 10px while
+  staggering in; a 150ms debounce after `state === "ready"` is enough). The
+  loading/ready/error stamp near the hero port is rendered by the DOM site
+  (SYNCING / LINK OK / OFFLINE MODE); the robot's fetch theater attaches to
+  the same `useProjects` state without touching the stamp.
+- Regression rule: any layout change to terrain-tagged elements must re-run
+  `scripts/check-terrain.mjs` (capture snippet in the file header). Hover
+  states on terrain elements must never transform their rects.
+
 ### 4.3 Face
 
 - Offscreen low-res pixel buffer (around 16x12), upscaled nearest-neighbor onto the head
@@ -219,6 +259,14 @@ is expected to reach satisfies them at EVERY breakpoint:
   satisfy the level design contract (4.2c) at every breakpoint, because M2 will not
   get to change the layout to fix traversal. GATE: owner signs off that the site
   stands alone.
+  - STATUS 2026-07-03: built, pending owner review. Visual direction picked by
+    owner: "beige lab hardware" (light-first warm beige, device-faceplate
+    cards, silkscreen mono labels) with a manual theme toggle defaulting to
+    system dark/light. Layout verified against 4.2c via
+    `scripts/check-terrain.mjs` at 1280/768/390/320 (see 4.2d for the as-built
+    terrain handoff). Data layer untouched; old typewriter/neumorphic site and
+    the font-awesome CDN removed; fonts self-hosted (Space Grotesk + JetBrains
+    Mono via fontsource).
 - M2 integration. DOM-rect terrain, viewport companionship, section jobs, fetch-state
   theater, error path. GATE: full walkthrough on desktop.
 - M3 polish. Mobile profile, easter eggs, timing passes, performance validation, QA

@@ -1,178 +1,182 @@
-import React, { useEffect, useState } from "react";
 import "./App.css";
 import { useProjects } from "./hooks/useProjects";
 import ProjectCard from "./components/ProjectCard";
 import RepoCard from "./components/RepoCard";
+import Cable from "./components/Cable";
+import ThemeToggle from "./components/ThemeToggle";
+import {
+  IconGitHub,
+  IconLinkedIn,
+  IconInstagram,
+  IconMail,
+  IconArrowDown,
+} from "./components/Icons";
+import { GITHUB_USER } from "./data/projects";
+
+const EMAIL = "sayanbakshi2002@gmail.com";
+const LINKS = {
+  github: `https://github.com/${GITHUB_USER}`,
+  linkedin: "https://www.linkedin.com/in/sayan-bakshi-103546204/",
+  instagram: "https://www.instagram.com/bakshi_sayan/",
+};
+
+const SKILLS = ["Go", "C++", "JavaScript", "React", "Postgres", "Kafka", "Python"];
+
+function portStamp(state, count) {
+  if (state === "error") return "OFFLINE MODE";
+  if (state === "ready") return `LINK OK · ${count} REPOS`;
+  return "SYNCING";
+}
 
 function App() {
   const { featured, repos, state } = useProjects();
 
-  const words = [
-    " am a CS Undergrad",
-    " love problem solving",
-    " am a competitive programmer",
-    " am a developer",
-    " love learning new skills",
-    " wanna be everything at once!",
-  ];
-
-  const [index, setIndex] = useState(0);
-  const [subIndex, setSubIndex] = useState(0);
-  const [blink, setBlink] = useState(true);
-  const [reverse, setReverse] = useState(false);
-
-  useEffect(() => {
-    if (index === words.length - 1 && subIndex === words[index].length) {
-      return;
-    }
-
-    if (
-      subIndex === words[index].length + 1 &&
-      index !== words.length - 1 &&
-      !reverse
-    ) {
-      setReverse(true);
-      return;
-    }
-
-    if (subIndex === 0 && reverse) {
-      setReverse(false);
-      setIndex((prev) => prev + 1);
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      setSubIndex((prev) => prev + (reverse ? -1 : 1));
-    }, Math.max(reverse ? 75 : subIndex === words[index].length ? 1000 : 150, parseInt(Math.random() * 350)));
-
-    return () => clearTimeout(timeout);
-  }, [subIndex, index, reverse]);
-
-  useEffect(() => {
-    const timeout2 = setTimeout(() => {
-      setBlink((prev) => !prev);
-    }, 500);
-    return () => clearTimeout(timeout2);
-  }, [blink]);
-
   return (
-    <div>
-      <div id="cont">
-        <div id="desc">
-          <h1>
-            <span className="hoverText">H</span>
-            <span className="hoverText">e</span>
-            <span className="hoverText">l</span>
-            <span className="hoverText">l</span>
-            <span className="hoverText">o</span>
-            <span className="hoverText">! </span>
-            <span className="hoverText">M</span>
-            <span className="hoverText">y </span>
-            <span className="hoverText">N</span>
-            <span className="hoverText">a</span>
-            <span className="hoverText">m</span>
-            <span className="hoverText">e </span>
-            <span className="hoverText">i</span>
-            <span className="hoverText">s </span>
-            <span className="name">Sayan Bakshi</span>
-            <span className="hoverText">. </span>
-            <br />
-          </h1>
-          <h1 id="changingText" style={{ padding: "0px 80px 80px 80px" }}>
-            I {`${words[index].substring(0, subIndex)}${blink ? "|" : " "}`}
-          </h1>
-          <div id="test">
-            <div id="test2">
-              <img src="avatarFace.png" alt="avt" id="avatar" />
-            </div>
-          </div>
+    <div id="page">
+      <ThemeToggle />
+      <Cable />
+
+      <header className="hero">
+        <p className="eyebrow mono">SAYAN BAKSHI · PORTFOLIO</p>
+        <h1 className="heroName" data-terrain="hero">
+          Sayan Bakshi
+        </h1>
+        <p className="heroRole" data-terrain="hero">
+          Software engineer: backend systems, infra, and platform tooling.
+        </p>
+        <div className="heroSocials" data-terrain="hero">
+          <a href={LINKS.github} target="_blank" rel="noreferrer" aria-label="GitHub">
+            <IconGitHub />
+          </a>
+          <a href={LINKS.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn">
+            <IconLinkedIn />
+          </a>
+          <a href={LINKS.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
+            <IconInstagram />
+          </a>
+          <a href={`mailto:${EMAIL}`} aria-label="Email">
+            <IconMail />
+          </a>
         </div>
-        <div id="welcomeMessage">Welcome to my Portfolio</div>
-      </div>
+        <div className="portRow" data-terrain="port-row">
+          <span className="portJack" id="port" data-terrain="port" aria-hidden="true">
+            <i />
+          </span>
+          <span className="portLabel mono">PORT DATA-01</span>
+          <span className="portRule" aria-hidden="true" />
+          <span className={`stamp mono stamp-${state}`} role="status">
+            <i className="stampLed" aria-hidden="true" />
+            {portStamp(state, featured.length + repos.length)}
+          </span>
+        </div>
+        <a className="scrollCue mono" href="#featured">
+          SCROLL
+          <IconArrowDown />
+        </a>
+      </header>
 
-      <div id="project">
-        <h1>
-          ꧁ <sub>Projects</sub> ꧂
-        </h1>
-        {featured.map((p) => (
-          <ProjectCard key={p.id ?? p.title} {...p} />
-        ))}
-      </div>
-
-      <div id="moreProjects">
-        <h1>
-          ꧁ <sub>More on GitHub</sub> ꧂
-        </h1>
-        {state === "loading" && (
-          <div className="repoNote">Loading repositories…</div>
-        )}
-        {state === "error" && (
-          <div className="repoNote">
-            Couldn’t reach GitHub right now — check out the rest on{" "}
-            <a
-              href="https://github.com/banjobyster"
-              target="_blank"
-              rel="noreferrer"
-            >
-              my profile
-            </a>
-            .
-          </div>
-        )}
-        {state === "ready" && repos.length === 0 && (
-          <div className="repoNote">No other public repositories yet.</div>
-        )}
-        <div className="repoGrid">
-          {repos.map((r) => (
-            <RepoCard key={r.id} repo={r} />
+      <section className="section" id="featured">
+        <h2 className="sectionHead" data-terrain="heading">
+          <span className="headIndex mono">01</span>
+          Featured projects
+          <span className="headRule" aria-hidden="true" />
+        </h2>
+        <div className="cards">
+          {featured.map((p, i) => (
+            <ProjectCard key={p.id ?? p.title} {...p} index={i} />
           ))}
         </div>
-      </div>
+      </section>
 
-      <div id="About_Me">
-        <h1>About Me</h1>
-        Hi folks, Sayan here. I'm a software engineer with full-stack experience,
-        focused on backend systems, infrastructure, and platform tooling. I enjoy
-        competitive programming and building things from scratch - whether it's a
-        ray tracer in C++ or running GPT-2 in the browser.
-      </div>
+      <section className="section" id="more">
+        <h2 className="sectionHead" data-terrain="heading">
+          <span className="headIndex mono">02</span>
+          More on GitHub
+          <span className="headRule" aria-hidden="true" />
+          <a className="headLink mono" href={LINKS.github} target="_blank" rel="noreferrer">
+            github.com/{GITHUB_USER} ↗
+          </a>
+        </h2>
+        <div className="hatch" data-terrain="hatch">
+          <span className="hatchGrille" aria-hidden="true" />
+          <span className="hatchLabel mono">EXT STORAGE</span>
+        </div>
+        <div className="repoGrid" data-state={state}>
+          {state === "loading" &&
+            [0, 1, 2, 3].map((i) => (
+              <div className="repoCard skel" key={i} aria-hidden="true">
+                <span className="skelBar w40" />
+                <span className="skelBar w80" />
+                <span className="skelBar w25" />
+              </div>
+            ))}
+          {repos.map((r, i) => (
+            <RepoCard key={r.id} repo={r} index={i} />
+          ))}
+        </div>
+        {state === "ready" && repos.length === 0 && (
+          <p className="note mono">NO OTHER PUBLIC REPOS YET</p>
+        )}
+        {state === "error" && (
+          <p className="note mono">
+            REPO LIST UNAVAILABLE ·{" "}
+            <a href={LINKS.github} target="_blank" rel="noreferrer">
+              BROWSE THE PROFILE
+            </a>
+          </p>
+        )}
+      </section>
 
-      <div id="footer">
-        <div style={{ marginTop: "30px" }}>
-          <a
-            id="link"
-            href="mailto:sayanbakshi2002@gmail.com"
-            title="Contact me"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <i className="fa fa-envelope"> </i> sayanbakshi2002@gmail.com
-          </a>
+      <section className="section" id="about">
+        <h2 className="sectionHead" data-terrain="heading">
+          <span className="headIndex mono">03</span>
+          About
+          <span className="headRule" aria-hidden="true" />
+        </h2>
+        <div className="aboutBody" data-terrain="about">
+          <p>
+            Sayan here. I am a software engineer with full-stack experience,
+            focused on backend systems, infrastructure, and platform tooling.
+            Away from work I enjoy competitive programming and building things
+            from scratch, whether that is a ray tracer in C++ or GPT-2 running
+            in the browser.
+          </p>
+          <ul className="chips mono">
+            {SKILLS.map((s) => (
+              <li key={s}>{s}</li>
+            ))}
+          </ul>
         </div>
-        <div id="holder_contact_links">
-          <a
-            href="https://www.linkedin.com/in/sayan-bakshi-103546204/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <i className="fa fa-linkedin"></i>
+      </section>
+
+      <footer className="section" id="contact">
+        <h2 className="sectionHead" data-terrain="heading">
+          <span className="headIndex mono">04</span>
+          Contact
+          <span className="headRule" aria-hidden="true" />
+        </h2>
+        <div className="contactBody" data-terrain="contact">
+          <a className="contactMail" href={`mailto:${EMAIL}`}>
+            {EMAIL}
           </a>
-          <a
-            href="https://github.com/banjobyster"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <i className="fa fa-github"></i>
-          </a>
-          <a
-            href="https://www.instagram.com/bakshi_sayan/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <i className="fa fa-instagram"></i>
-          </a>
+          <div className="contactLinks">
+            <a href={LINKS.github} target="_blank" rel="noreferrer">
+              <IconGitHub /> GITHUB
+            </a>
+            <a href={LINKS.linkedin} target="_blank" rel="noreferrer">
+              <IconLinkedIn /> LINKEDIN
+            </a>
+            <a href={LINKS.instagram} target="_blank" rel="noreferrer">
+              <IconInstagram /> INSTAGRAM
+            </a>
+          </div>
         </div>
-      </div>
+        <div className="footerBar">
+          <span className="cableEndSocket" id="cableEnd" data-terrain="socket" aria-hidden="true" />
+          <span className="mono">© 2026 SAYAN BAKSHI</span>
+          <span className="mono">EOF</span>
+        </div>
+      </footer>
     </div>
   );
 }

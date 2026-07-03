@@ -1,0 +1,113 @@
+/* Design tokens + base. Look: "beige lab hardware", the page as the machine
+   the robot lives in. Light is the primary theme; dark is a warm charcoal
+   variant of the same panel language. Theme is set as data-theme on <html>
+   before first paint (see index.html). */
+
+:root {
+  --font-sans: "Space Grotesk Variable", "Space Grotesk", system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #e9e5da;
+  --panel: #f4f1e9;
+  --panel-2: #ddd7c7;
+  --screen: #23211b;
+  --ink: #26231b;
+  --ink-soft: #43402f;
+  --muted: #6f6959;
+  --line: #c6bfac;
+  --line-soft: #d8d2c1;
+  --accent: #1e7a3f;
+  --led: #2fc064;
+  --led-warn: #d9a13b;
+  --led-err: #d96f4a;
+  --led-off: #b5ae9c;
+  --shadow: 0 1px 2px rgba(38, 35, 27, 0.07), 0 8px 20px -10px rgba(38, 35, 27, 0.16);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #201d17;
+  --panel: #2a2720;
+  --panel-2: #171510;
+  --screen: #14120d;
+  --ink: #ece7da;
+  --ink-soft: #cfc9b8;
+  --muted: #a49d8a;
+  --line: #443f30;
+  --line-soft: #353023;
+  --accent: #4ecb7d;
+  --led: #3bd873;
+  --led-warn: #d9a13b;
+  --led-err: #e07a55;
+  --led-off: #4a4536;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 24px -12px rgba(0, 0, 0, 0.5);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p,
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+ul {
+  list-style: none;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
