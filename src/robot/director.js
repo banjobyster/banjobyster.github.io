@@ -3,8 +3,8 @@
 // ambience. Noise scales inversely with stakes (SPEC 4.2b): purposeful jobs
 // run near-zero noise and never stall; ambience is distractible.
 
-import { makeWave } from './maneuvers.js';
-import { clamp, randRange, choose } from './math.js';
+import { makeWave } from './engine/maneuvers.js';
+import { clamp, randRange, choose } from './engine/math.js';
 
 const SECTIONS = [
   ['hero', 'header.hero'],

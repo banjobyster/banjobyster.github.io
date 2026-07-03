@@ -2,10 +2,10 @@
 // and a small control panel for the motion-quality review.
 
 import { Container, Graphics } from 'pixi.js';
-import { createOverlay } from '../robot/overlay.js';
-import { compileTerrain } from '../robot/terrain.js';
-import { Robot } from '../robot/robot.js';
-import { RobotRenderer } from '../robot/renderer.js';
+import { createOverlay } from '../robot/engine/overlay.js';
+import { compileTerrain } from '../robot/engine/terrain.js';
+import { Robot } from '../robot/engine/robot.js';
+import { RobotRenderer } from '../robot/engine/renderer.js';
 import './sandbox.css';
 
 const EDGE_COLORS = { hop: 0xe0a83c, climb: 0x4c9be8, drop: 0xb069e8 };

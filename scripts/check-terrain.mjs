@@ -19,7 +19,7 @@
 // Exits 1 if any visible platform is ever unreachable from the ground.
 
 import { readFileSync } from "node:fs";
-import { compileTerrain } from "../src/robot/terrain.js";
+import { compileTerrain } from "../src/robot/engine/terrain.js";
 
 const SCROLL_STEP = 60;
 

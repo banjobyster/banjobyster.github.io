@@ -16,13 +16,13 @@
 // edge, and still climbs or drops into view on its own legs.
 
 import { Container, Graphics } from 'pixi.js';
-import { createOverlay } from './overlay.js';
-import { compileTerrain, nearestPointOnTerrain } from './terrain.js';
-import { Robot } from './robot.js';
-import { RobotRenderer } from './renderer.js';
+import { createOverlay } from './engine/overlay.js';
+import { compileTerrain, nearestPointOnTerrain } from './engine/terrain.js';
+import { Robot } from './engine/robot.js';
+import { RobotRenderer } from './engine/renderer.js';
 import { Effects } from './effects.js';
 import { Director } from './director.js';
-import { clamp } from './math.js';
+import { clamp } from './engine/math.js';
 
 const REBUILD_MS = 150;
 const CORRIDOR = 600; // graph extends this far beyond the viewport

@@ -4,7 +4,7 @@
 // cable survives reflow for free.
 
 import { Graphics } from 'pixi.js';
-import { clamp, qbez, randRange } from './math.js';
+import { clamp, qbez, randRange } from './engine/math.js';
 
 export class Effects {
   constructor(robot) {
