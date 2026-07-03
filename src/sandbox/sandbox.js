@@ -10,7 +10,22 @@ import './sandbox.css';
 
 const EDGE_COLORS = { hop: 0xe0a83c, climb: 0x4c9be8, drop: 0xb069e8 };
 
+// Mobile preset: a 390px phone-width frame with stacked cards, the worst case
+// for traversal. Card tops are 88px apart (climbMax is 95) and alternate
+// left/right offsets so every upper corner has standable approach space on
+// the card below: the layout rules M1 has to follow, proven here first.
+function applyLayout() {
+  if (new URLSearchParams(location.search).get('layout') !== 'mobile') return;
+  document.body.classList.add('mobile');
+  document.querySelector('#world').innerHTML = `
+    <div class="box" data-terrain style="left: 16px; bottom: 88px; width: 260px; height: 64px"><span>1</span></div>
+    <div class="box" data-terrain style="left: 114px; bottom: 176px; width: 260px; height: 64px"><span>2</span></div>
+    <div class="box" data-terrain style="left: 16px; bottom: 264px; width: 260px; height: 64px"><span>3</span></div>
+    <div id="ground" data-terrain></div>`;
+}
+
 async function main() {
+  applyLayout();
   const app = await createOverlay();
   const stage = new Container();
   const debugG = new Graphics();

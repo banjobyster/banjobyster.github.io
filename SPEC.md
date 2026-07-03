@@ -54,11 +54,21 @@ plus an "offline mode" stamp near the hero port instead of an apology string.
 
 ## 4. The robot
 
-### 4.1 Body plan: Pixar CRT toddler (revised 2026-07-03 per owner reference image)
+### 4.1 Body plan: Pixar CRT toddler (revised 2026-07-03 per owner reference image;
+### final look signed off 2026-07-03, second review session)
 
 - A small Pixar-styled machine: a big oversized CRT monitor head (green pixel face on
-  a dark screen, beige-gray bezel), a small blue chest, and 4 straight capsule legs
-  with NO joints. Two antennae with orange ball tips for secondary motion.
+  a dark screen with glass shine, beige-gray bezel, glowing power light), a small blue
+  chest, and 4 accordion legs with NO joints. No antennae (cut by owner).
+- Accordion legs (the signed-off design): each leg is a dark near-black stretchy inner
+  core under 4 hard light-gray rings. The rings never deform; they sit flush at rest,
+  spread apart when the leg reaches (climbs, big steps), and stack when compressed
+  (sleep, crouch). Legs are deliberately in the gray bezel material family, NOT body
+  blue, so the stretchy part reads as a different material from the solid body.
+  Rejected on review: straight blue capsules, telescoping tubes.
+- Overall size runs 1.4x the first build via `P.scale` in DEFAULT_PARAMS. Every
+  authored pixel offset in gait.js and maneuvers.js multiplies by `P.scale`; keep that
+  invariant when adding motion.
 - Walks on card edges, headings, and viewport edges; nervous and quick.
 - All geometry is flat vector shapes drawn in Pixi (Graphics/simple meshes), a flat
   cartoon read of the reference render. No sprite art, no textures. Visual quality
@@ -66,8 +76,9 @@ plus an "offline mode" stamp near the hero port instead of an apology string.
 
 ### 4.2 Locomotion (the make-or-break system)
 
-- Legs: straight single-segment capsules, no joints, no IK. Character comes from the
-  step scheduler, body springs, and squash on landing, not from limb articulation.
+- Legs: single-segment accordion capsules (see 4.1), no joints, no IK. Character comes
+  from the step scheduler, body springs, ring spread/stack, and squash on landing, not
+  from limb articulation.
 - Gait: step scheduler. A foot steps when its anchor drifts past a threshold from its
   rest pose; diagonal pairs alternate; a step is a parabolic swing of 80-120 ms.
   Threshold and swing time scale with body speed so idling looks calm and fleeing looks
@@ -106,6 +117,34 @@ The Rain World split: intelligence in the route, charm in the execution.
   into competence IS the toddler personality.
 - If terrain vanishes mid-route (scrolled away), the robot replans; if stranded, it
   plays a viewport-edge grab or tumbles out and re-enters from offscreen.
+
+### 4.2c Level design contract (BINDING for M1 layout, desktop and mobile)
+
+The robot can only traverse what the nav graph allows. These are the numbers in
+`src/robot/terrain.js` (NAV constants); they are absolute CSS pixels and deliberately
+do NOT scale with the robot's `P.scale` (layouts are authored in px, so the traversal
+rules must be stable px values too). M1 must design so that every platform the robot
+is expected to reach satisfies them at EVERY breakpoint:
+
+- Gap-hop: horizontal gap between facing edges of 6 to 120px, vertical difference
+  between the two tops at most 80px.
+- Corner-climb: wall height (difference between the two surface tops) at most 95px,
+  and the lower surface must extend at least ~12px past the upper surface's corner
+  (the robot needs standable approach space beside the wall).
+- Drop: at most 320px down, again with ~12px of clear space beside the corner.
+- Standing: a surface needs roughly 40px of width to be worth standing on (stance is
+  ~26px wide at rest, and segments are inset 2px from rect corners).
+- Reachability rule: the page ground (viewport bottom edge or an equivalent baseline
+  surface) plus the platforms must form a CONNECTED graph via the moves above. Nothing
+  the robot has a job on may be reachable only by teleport.
+- Mobile consequence (the binding one): stacked single-column cards are traversed by
+  climbing, so consecutive card TOPS must be at most 95px apart (card height + gap),
+  and consecutive cards need alternating horizontal offsets so each upper corner has
+  approach space on the card below. The sandbox mobile preset
+  (`/sandbox.html?debug=1&layout=mobile`) is the living proof of this pattern: 390px
+  frame, 64px cards, 24px gaps, alternating 98px offsets. If a mobile design cannot
+  meet this, it must provide intermediate steps (ports, chips, decorative ledges) or
+  accept the robot only descending through that section.
 
 ### 4.3 Face
 
@@ -153,6 +192,13 @@ The Rain World split: intelligence in the route, charm in the execution.
 - Robot code lives in `src/robot/` as plain modules (ik.ts-style pure functions, fsm,
   sensors, face, terrain), Pixi only at the render edge. React communicates page state
   (fetch state, hovered card, section in view) through a small event bus or context.
+- Integration surface (build in M2, respect in M1): site code never touches robot
+  internals. A single facade module will expose roughly: mount/unmount the overlay,
+  set terrain from `[data-terrain]`-tagged elements, goto(element), set expression,
+  and arrive/sleep events. M1's only obligations are tagging terrain elements with
+  `data-terrain` and honoring the level design contract (4.2c). Terrain rebuilds are
+  debounced (the sandbox already does 150ms on scroll/resize); real pages also reflow
+  on image/font load, so M2 should rebuild on ResizeObserver too.
 - Interaction with the robot itself (clicks) uses hit-testing on the canvas via a
   document-level listener, since the canvas ignores pointer events.
 - Performance budget: 60 fps on a mid laptop, DPR capped at 2, rAF paused when the tab
@@ -165,9 +211,14 @@ The Rain World split: intelligence in the route, charm in the execution.
   gap-hop and corner-climb (clean, no stumbles), cursor tracking, 3 face expressions.
   GATE: owner judges whether the motion feels alive and the art style matches the
   agreed reference. Iterate or kill here; no site work before sign-off.
+  - STATUS: GATE CLOSED 2026-07-03. Owner signed off on look and motion (accordion
+    legs, no antennae, 1.4x scale, lean fix, climb re-grab fix). Committed on main.
+    Stumbles remain disabled and re-enter one-by-one with owner approval only.
 - M1 fallback site. The redesigned minimal DOM page, no robot: all five sections, cable
-  motif, responsive, reduced-motion clean, data layer wired as today. GATE: owner signs
-  off that the site stands alone.
+  motif, responsive, reduced-motion clean, data layer wired as today. The layout MUST
+  satisfy the level design contract (4.2c) at every breakpoint, because M2 will not
+  get to change the layout to fix traversal. GATE: owner signs off that the site
+  stands alone.
 - M2 integration. DOM-rect terrain, viewport companionship, section jobs, fetch-state
   theater, error path. GATE: full walkthrough on desktop.
 - M3 polish. Mobile profile, easter eggs, timing passes, performance validation, QA
