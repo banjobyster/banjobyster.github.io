@@ -122,6 +122,9 @@ export async function mountRobot(opts = {}) {
       h: 60,
       el: null,
       tag: 'ground',
+      // ghost: a walkable line, not a solid box; without it the compiler's
+      // climb-blocker check cuts every up-route at the viewport bottom edge
+      ghost: true,
     });
     return rects;
   };

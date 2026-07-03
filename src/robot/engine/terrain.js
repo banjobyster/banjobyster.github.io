@@ -71,8 +71,12 @@ export function compileTerrain(rects) {
       ];
       for (const side of sides) {
         if (side.approachX < lower.x1 || side.approachX > lower.x2) continue;
+        // Ghost rects (the facade's synthesized viewport-bottom ground) are
+        // walkable lines, not solid boxes: they must not sever climbs that
+        // cross them, or the cable ladder gets cut at the fold and a robot
+        // below the viewport can never climb back in.
         const blocker = nearestBelow(
-          rects.filter((r) => r !== upper.rect),
+          rects.filter((r) => r !== upper.rect && !r.ghost),
           side.approachX,
           upper.y,
           lower.rect,
