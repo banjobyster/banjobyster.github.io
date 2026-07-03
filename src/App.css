@@ -136,13 +136,6 @@
   padding-top: clamp(90px, 16vh, 150px);
 }
 
-.eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  color: var(--muted);
-  margin-bottom: 18px;
-}
-
 .heroName {
   width: fit-content;
   font-size: clamp(2rem, 9vw, 4rem);

@@ -9,7 +9,6 @@ import RobotOverlay from "./components/RobotOverlay";
 import {
   IconGitHub,
   IconLinkedIn,
-  IconInstagram,
   IconMail,
   IconArrowDown,
 } from "./components/Icons";
@@ -19,7 +18,6 @@ const EMAIL = "sayanbakshi2002@gmail.com";
 const LINKS = {
   github: `https://github.com/${GITHUB_USER}`,
   linkedin: "https://www.linkedin.com/in/sayan-bakshi-103546204/",
-  instagram: "https://www.instagram.com/bakshi_sayan/",
 };
 
 const SKILLS = ["Go", "C++", "JavaScript", "React", "Postgres", "Kafka", "Python"];
@@ -44,12 +42,11 @@ function App() {
       />
 
       <header className="hero">
-        <p className="eyebrow mono">PORTFOLIO · REV 3</p>
         <h1 className="heroName" data-terrain="hero">
           Sayan Bakshi
         </h1>
         <p className="heroRole" data-terrain="hero">
-          Software engineer: backend systems, infra, and platform tooling.
+          Software engineer: backend systems, platform tooling, and competitive programming.
         </p>
         <div className="heroSocials" data-terrain="hero">
           <a href={LINKS.github} target="_blank" rel="noreferrer" aria-label="GitHub">
@@ -57,9 +54,6 @@ function App() {
           </a>
           <a href={LINKS.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn">
             <IconLinkedIn />
-          </a>
-          <a href={LINKS.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
-            <IconInstagram />
           </a>
           <a href={`mailto:${EMAIL}`} aria-label="Email">
             <IconMail />
@@ -152,8 +146,7 @@ function App() {
             tick, then building my own from scratch; most of the projects
             above started exactly that way. Day to day that curiosity goes
             into the server side of products: services, data flows, and the
-            internal tooling other engineers build on. Competitive programming
-            keeps the algorithm muscles honest.
+            internal tooling other engineers build on.
           </p>
           <ul className="chips mono">
             {SKILLS.map((s) => (
@@ -179,9 +172,6 @@ function App() {
             </a>
             <a href={LINKS.linkedin} target="_blank" rel="noreferrer">
               <IconLinkedIn /> LINKEDIN
-            </a>
-            <a href={LINKS.instagram} target="_blank" rel="noreferrer">
-              <IconInstagram /> INSTAGRAM
             </a>
           </div>
         </div>
