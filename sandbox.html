@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>robot sandbox: M0</title>
+  </head>
+  <body>
+    <div id="world">
+      <div class="box" data-terrain style="left: 100px; width: 200px; height: 72px"><span>A</span></div>
+      <div class="box" data-terrain style="left: 380px; width: 260px; height: 136px"><span>B</span></div>
+      <div class="box" data-terrain style="left: 740px; width: 180px; height: 64px"><span>C</span></div>
+      <div class="box" data-terrain style="left: 1030px; width: 150px; height: 90px"><span>D</span></div>
+      <div id="ground" data-terrain></div>
+    </div>
+    <div class="panel">
+      <div class="title">M0 crawler sandbox</div>
+      <label class="row">noise <input type="range" id="noise" min="0" max="1" step="0.05" value="0.5" /></label>
+      <label class="row"><input type="checkbox" id="debug" /> nav graph</label>
+      <div class="row faces">
+        <button data-face="curious">curious</button>
+        <button data-face="happy">happy</button>
+        <button data-face="glitch">glitch</button>
+        <button data-face="sleepy">sleepy</button>
+      </div>
+      <div class="state" id="state">state</div>
+      <div class="hint">click anywhere to send the robot there; click the robot to poke it; rush it with the cursor to startle it</div>
+    </div>
+    <script type="module" src="/src/sandbox/sandbox.js"></script>
+  </body>
+</html>
