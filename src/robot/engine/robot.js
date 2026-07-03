@@ -8,29 +8,17 @@ import { makeHop } from './maneuvers.js';
 import { planRoute, nearestPointOnTerrain } from './terrain.js';
 import { clamp, lerp, spring, rot2d, randRange, choose } from './math.js';
 
-// Body plan: a big CRT monitor head over a small chest, four accordion
-// legs (stretchy core under hard rings), no joints. Pixar toddler, not insect.
-export const DEFAULT_PARAMS = {
-  scale: 1.4, // multiplier for the authored motion offsets in gait/maneuvers
-  bodyW: 25, // chest
-  bodyH: 15,
-  headW: 62, // the monitor
-  headH: 48,
-  hipX: [10, 5.5, -5.5, -10],
-  hipY: 7,
-  footRestX: [13, 7, -7, -13],
-  standH: 22,
-  stepThresholdBase: 12,
-  walkSpeed: 200,
-  wanderSpeed: 115,
-  accel: 950,
-};
-
+// The robot is character-agnostic: proportions, motion tuning, and the face
+// expression set come from the character definition (src/robot/characters/).
+// P.scale multiplies authored motion offsets in gait/maneuvers; the NAV
+// terrain constants stay absolute px regardless of it.
 export class Robot {
-  constructor(P = DEFAULT_PARAMS) {
+  constructor(character) {
+    this.character = character;
+    const P = character.params;
     this.P = P;
     this.gait = new Gait(P);
-    this.face = new Face();
+    this.face = new Face(character.face);
     this.executor = new Executor(this);
     this.graph = null;
     this.seg = 0;

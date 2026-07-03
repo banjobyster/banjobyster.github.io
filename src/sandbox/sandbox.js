@@ -6,6 +6,7 @@ import { createOverlay } from '../robot/engine/overlay.js';
 import { compileTerrain } from '../robot/engine/terrain.js';
 import { Robot } from '../robot/engine/robot.js';
 import { RobotRenderer } from '../robot/engine/renderer.js';
+import { CRT_TODDLER } from '../robot/characters/crt-toddler.js';
 import './sandbox.css';
 
 const EDGE_COLORS = { hop: 0xe0a83c, climb: 0x4c9be8, drop: 0xb069e8 };
@@ -38,11 +39,11 @@ async function main() {
     });
 
   let graph = compileTerrain(collectRects());
-  const robot = new Robot();
+  const robot = new Robot(CRT_TODDLER);
   const groundIx = graph.segments.reduce((a, s, i) => (s.y > graph.segments[a].y ? i : a), 0);
   const gs = graph.segments[groundIx];
   robot.spawn(graph, groundIx, gs.x1 + (gs.x2 - gs.x1) * 0.4);
-  const renderer = new RobotRenderer(stage, robot.P);
+  const renderer = new RobotRenderer(stage, robot.character);
 
   // Cursor tracking with smoothed velocity.
   const cursor = { x: -1000, y: -1000, vx: 0, vy: 0, speed: 0, has: false };

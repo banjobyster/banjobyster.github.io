@@ -1,32 +1,17 @@
-// Pixi render edge: draws the robot from the state Robot.update() produced.
-// Flat-cartoon take on the reference: a big CRT monitor with a green pixel
-// face, sitting on a small blue chest with four ring-armored accordion legs.
+// Pixi render edge: draws a robot from the state Robot.update() produced.
+// Everything character-specific (colors, body graphics, leg style, face
+// dimensions) comes from the character definition; this file owns the
+// generic machinery: layering, the ground shadow, the accordion legs, and
+// the nearest-neighbor face blit.
 
 import { Container, Graphics } from 'pixi.js';
-import { FACE_W, FACE_H } from './face.js';
 import { clamp, qbez } from './math.js';
 
-const COL = {
-  bezel: 0xd3d7dc,
-  bezelShade: 0xa8aeb7,
-  bezelDetail: 0x8f969f,
-  screenFrame: 0x394049,
-  screen: 0x0b100d,
-  blue: 0x5b9fe3,
-  blueHi: 0x7ab5ee,
-  blueDark: 0x2f5d8f,
-  legNear: 0xc6cbd2,
-  legNearCore: 0x2a2e33,
-  legFar: 0x878e97,
-  legFarCore: 0x1d2126,
-  orange: 0xf08c3c,
-  pix: [0, 0x3f8f55, 0x7de88a, 0xe2ffe4],
-};
-
 export class RobotRenderer {
-  constructor(parent, P) {
-    this.P = P;
-    this.pix = COL.pix; // face palette; the director may tint it to a card accent
+  constructor(parent, character) {
+    this.C = character;
+    this.P = character.params;
+    this.pix = character.palette.pix; // face palette; may be tinted per accent
     this.root = new Container();
     parent.addChild(this.root);
 
@@ -40,63 +25,35 @@ export class RobotRenderer {
     this.legsNear = new Graphics();
     this.headC = new Container();
 
-    // Chest: small blue box with a highlight and a port slot.
     const chestG = new Graphics();
-    chestG.roundRect(-P.bodyW / 2, -P.bodyH / 2, P.bodyW, P.bodyH, 5).fill(COL.blue);
-    chestG.roundRect(-P.bodyW / 2 + 2.8, -P.bodyH / 2 + 1.4, P.bodyW - 5.6, 4.2, 2).fill(COL.blueHi);
-    chestG.roundRect(-5, -1.5, 10, 5.5, 1.5).fill(COL.blueDark);
+    character.buildBody(chestG);
     this.bodyC.addChild(chestG);
 
-    // Monitor: bezel with bottom-right shading, recessed screen, detail bits.
-    const w = P.headW;
-    const h = P.headH;
     const headG = new Graphics();
-    headG.roundRect(-w / 2 + 1.7, -h / 2 + 2.5, w, h, 10).fill(COL.bezelShade);
-    headG.roundRect(-w / 2, -h / 2, w, h, 10).fill(COL.bezel);
-    headG.roundRect(-w / 2 - 4, -8.5, 6.5, 17, 2).fill(COL.bezelShade); // side unit
-    headG.roundRect(-w / 2 + 5.5, -h / 2 + 4.2, w - 11, h - 13.5, 7).fill(COL.screenFrame);
-    headG.roundRect(-w / 2 + 7.5, -h / 2 + 6.2, w - 15, h - 17.5, 5).fill(COL.screen);
-    // control strip under the screen
-    headG.circle(w / 2 - 10, h / 2 - 4.6, 1.8).fill(COL.bezelDetail);
-    headG.circle(w / 2 - 16, h / 2 - 4.6, 1.8).fill(COL.bezelDetail);
-    headG.circle(-w / 2 + 10, h / 2 - 4.6, 3).fill({ color: COL.orange, alpha: 0.3 }); // glow
-    headG.circle(-w / 2 + 10, h / 2 - 4.6, 1.7).fill(COL.orange); // power light
+    const faceBox = character.buildHead(headG);
     this.headC.addChild(headG);
 
     this.faceG = new Graphics();
-    const sw = w - 15;
-    const sh = h - 17.5;
-    this.faceG.scale.set(sw / FACE_W, sh / FACE_H);
-    this.faceG.position.set(-sw / 2, -h / 2 + 6.2);
+    this.faceG.scale.set(faceBox.w / character.face.w, faceBox.h / character.face.h);
+    this.faceG.position.set(faceBox.x, faceBox.y);
     this.headC.addChild(this.faceG);
 
-    // Glossy CRT glass: two diagonal shines over the screen.
-    const glassG = new Graphics();
-    const gx = -sw / 2;
-    const gy = -h / 2 + 6.2;
-    glassG
-      .poly([
-        { x: gx + sw * 0.52, y: gy },
-        { x: gx + sw * 0.72, y: gy },
-        { x: gx + sw * 0.34, y: gy + sh },
-        { x: gx + sw * 0.14, y: gy + sh },
-      ])
-      .fill({ color: 0xffffff, alpha: 0.07 });
-    glassG
-      .poly([
-        { x: gx + sw * 0.8, y: gy },
-        { x: gx + sw * 0.87, y: gy },
-        { x: gx + sw * 0.62, y: gy + sh },
-        { x: gx + sw * 0.55, y: gy + sh },
-      ])
-      .fill({ color: 0xffffff, alpha: 0.05 });
-    this.headC.addChild(glassG);
+    if (character.buildHeadGloss) {
+      const glossG = new Graphics();
+      character.buildHeadGloss(glossG, faceBox);
+      this.headC.addChild(glossG);
+    }
 
     this.root.addChild(this.shadowG, this.legsFar, this.bodyC, this.legsNear, this.headC);
   }
 
   setFacePalette(pix) {
-    this.pix = pix || COL.pix;
+    this.pix = pix || this.C.palette.pix;
+  }
+
+  destroy() {
+    if (this.root.parent) this.root.parent.removeChild(this.root);
+    this.root.destroy({ children: true });
   }
 
   // Accordion legs: a stretchy inner core wrapped in hard rings. The rings
@@ -105,9 +62,10 @@ export class RobotRenderer {
   // thins as it stretches, which sells the elastic. Two layers of secondary
   // motion: the ring stack (anchored at the boot) lags a beat behind a sudden
   // stretch before spreading, and the core bows against fast sideways swings.
-  drawLegs(g, legs, coreColor, ringColor, width, dt) {
-    const RINGS = 4;
+  drawLegs(g, legs, style, dt) {
+    const RINGS = this.C.legs.rings;
     const S = this.P.scale;
+    const width = style.width;
     for (const l of legs) {
       const st = this.legState[l.i];
       const hx = l.hip.x;
@@ -149,12 +107,12 @@ export class RobotRenderer {
       const px = (t) => qbez(hx, cpx, ex, t);
       const py = (t) => qbez(hy, cpy, ey, t);
 
-      // Core thins only gently as it stretches: the old curve dropped to
-      // half-width mid-run and read as spindly legs.
+      // Core thins only gently as it stretches: a steeper curve reads as
+      // spindly legs mid-run.
       const coreW = width * 0.68 * clamp(Math.pow(1 / s, 0.3), 0.72, 1);
       g.moveTo(hx + ux, hy + uy)
         .quadraticCurveTo(cpx, cpy, ex, ey)
-        .stroke({ width: coreW, color: coreColor, cap: 'round' });
+        .stroke({ width: coreW, color: style.core, cap: 'round' });
 
       const ringLen = l.rest / RINGS;
       // stretch biases the stack toward the boot: the bare core shows hip-side
@@ -169,7 +127,7 @@ export class RobotRenderer {
         const rw = i === RINGS - 1 ? width : width * (1 - 0.07 * i);
         g.moveTo(px(ta), py(ta))
           .lineTo(px(tb), py(tb))
-          .stroke({ width: rw, color: ringColor, cap: 'butt' });
+          .stroke({ width: rw, color: style.ring, cap: 'butt' });
       }
     }
   }
@@ -196,15 +154,17 @@ export class RobotRenderer {
 
     this.legsFar.clear();
     this.legsNear.clear();
-    this.drawLegs(this.legsFar, R.legs.filter((l) => !l.near), COL.legFarCore, COL.legFar, 4.8, dt);
-    this.drawLegs(this.legsNear, R.legs.filter((l) => l.near), COL.legNearCore, COL.legNear, 5.4, dt);
+    this.drawLegs(this.legsFar, R.legs.filter((l) => !l.near), this.C.legs.far, dt);
+    this.drawLegs(this.legsNear, R.legs.filter((l) => l.near), this.C.legs.near, dt);
 
     if (R.face.dirty) {
       this.faceG.clear();
       const buf = R.face.buf;
-      for (let r = 0; r < FACE_H; r++) {
-        for (let c = 0; c < FACE_W; c++) {
-          const v = buf[r * FACE_W + c];
+      const fw = R.face.w;
+      const fh = R.face.h;
+      for (let r = 0; r < fh; r++) {
+        for (let c = 0; c < fw; c++) {
+          const v = buf[r * fw + c];
           if (v) this.faceG.rect(c + 0.07, r + 0.07, 0.86, 0.86).fill(this.pix[v]);
         }
       }

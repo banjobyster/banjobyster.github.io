@@ -20,6 +20,7 @@ import { createOverlay } from './engine/overlay.js';
 import { compileTerrain, nearestPointOnTerrain } from './engine/terrain.js';
 import { Robot } from './engine/robot.js';
 import { RobotRenderer } from './engine/renderer.js';
+import { CRT_TODDLER } from './characters/crt-toddler.js';
 import { Effects } from './effects.js';
 import { Director } from './director.js';
 import { clamp } from './engine/math.js';
@@ -51,11 +52,11 @@ export async function mountRobot(opts = {}) {
   const world = new Container();
   app.stage.addChild(world);
 
-  const robot = new Robot();
+  const robot = new Robot(opts.character || CRT_TODDLER);
   robot.autoWander = false; // the director owns ambient movement on the site
   const effects = new Effects(robot);
   world.addChild(effects.under);
-  const renderer = new RobotRenderer(world, robot.P);
+  const renderer = new RobotRenderer(world, robot.character);
   world.addChild(effects.over);
   const debugG = debug ? new Graphics() : null;
   if (debugG) world.addChild(debugG);
