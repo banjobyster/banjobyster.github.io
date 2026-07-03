@@ -149,14 +149,17 @@ export class RobotRenderer {
       const px = (t) => qbez(hx, cpx, ex, t);
       const py = (t) => qbez(hy, cpy, ey, t);
 
-      const coreW = width * 0.6 * clamp(Math.pow(1 / s, 0.5), 0.45, 1);
+      // Core thins only gently as it stretches: the old curve dropped to
+      // half-width mid-run and read as spindly legs.
+      const coreW = width * 0.68 * clamp(Math.pow(1 / s, 0.3), 0.72, 1);
       g.moveTo(hx + ux, hy + uy)
         .quadraticCurveTo(cpx, cpy, ex, ey)
         .stroke({ width: coreW, color: coreColor, cap: 'round' });
 
       const ringLen = l.rest / RINGS;
       // stretch biases the stack toward the boot: the bare core shows hip-side
-      const bias = clamp(st.spread / l.rest, 1, 1.5);
+      // (capped low, a long bare stretch of core reads too thin)
+      const bias = clamp(st.spread / l.rest, 1, 1.25);
       for (let i = 0; i < RINGS; i++) {
         const c = len - Math.pow(1 - (i + 0.5) / RINGS, bias) * st.spread;
         const b = Math.min(c + ringLen / 2, len);

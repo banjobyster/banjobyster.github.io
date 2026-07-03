@@ -39,8 +39,15 @@ export class Gait {
     f.swing = { fromX: f.x, fromY: f.y, toX, toY, t: -delay, dur, h };
   }
 
-  pairSwinging(pairIx) {
-    return PAIRS[pairIx].some((i) => this.feet[i].swing);
+  // relaxed: feet past the midpoint of their swing no longer block, so at
+  // running speed the pairs overlap like a real trot instead of leaving the
+  // waiting pair stretched further and further behind the body.
+  pairSwinging(pairIx, relaxed = false) {
+    return PAIRS[pairIx].some((i) => {
+      const s = this.feet[i].swing;
+      if (!s) return false;
+      return relaxed ? s.t < s.dur * 0.55 : true;
+    });
   }
 
   update(dt, bodyX, vel, surfY, facing, segX1, segX2) {
@@ -68,13 +75,17 @@ export class Gait {
 
     const S = P.scale;
     const speed = Math.abs(vel);
-    const threshold = clamp(P.stepThresholdBase + speed * 0.08, 8 * S, 30 * S);
-    const swingDur = clamp(0.12 - speed * 0.00022, 0.075, 0.12);
+    // Threshold growth and cap kept tight: feet that drift far behind the
+    // body stretch the legs thin and read as a splayed, skinny run.
+    const threshold = clamp(P.stepThresholdBase + speed * 0.055, 8 * S, 22 * S);
+    const swingDur = clamp(0.12 - speed * 0.0003, 0.055, 0.12);
     const swingH = clamp(3 * S + speed * 0.02, 3 * S, 8 * S);
+    const stagger = speed > 120 ? 0.02 : 0.04;
+    const relaxed = speed > 180;
 
     for (let p = 0; p < 2; p++) {
       const other = 1 - p;
-      if (this.pairSwinging(p) || this.pairSwinging(other)) continue;
+      if (this.pairSwinging(p) || this.pairSwinging(other, relaxed)) continue;
       const errs = PAIRS[p].map((i) => {
         const anchor = bodyX + P.footRestX[i] * facing;
         return { i, anchor, err: Math.abs(this.feet[i].x - anchor) };
@@ -83,9 +94,11 @@ export class Gait {
         let k = 0;
         for (const e of errs) {
           if (e.err > threshold * 0.45) {
-            const lead = vel * 0.12;
+            // Hind feet get extra lead so they replant under the body
+            // instead of trailing stretched-out behind it.
+            const lead = vel * (e.i >= 2 ? 0.17 : 0.12);
             const toX = clamp(e.anchor + lead, segX1 - 2, segX2 + 2);
-            this.startSwing(e.i, toX, surfY, swingDur, swingH, k * 0.04);
+            this.startSwing(e.i, toX, surfY, swingDur, swingH, k * stagger);
             k++;
           }
         }
