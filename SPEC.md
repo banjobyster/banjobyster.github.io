@@ -172,7 +172,9 @@ is reachable from the viewport-bottom ground at every scroll position.
   (section header rows, full column width), `card` (featured devices; each has
   a `.devicePort` visual for the hover plug-in), `hatch` (repo bay above the
   grid), `repo` (compact repo plates), `about` (portrait sit spot), `contact`
-  (sleep spot), `socket` (cable end).
+  (sleep spot), `socket` (cable end), `bench` (hero test-bench hardware, added
+  in the M2 feedback pass: crate/scope/tower staircase in the hero's lower
+  band, decorative playground platforms).
 - M2 obligations implied by this build: synthesize the ground as a full-width
   rect at the viewport bottom edge (as the sandbox does with #ground); rebuild
   terrain on scroll/resize AND on ResizeObserver of the body, since the rail
