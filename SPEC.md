@@ -173,8 +173,13 @@ is reachable from the viewport-bottom ground at every scroll position.
   a `.devicePort` visual for the hover plug-in), `hatch` (repo bay above the
   grid), `repo` (compact repo plates), `about` (portrait sit spot), `contact`
   (sleep spot), `socket` (cable end), `bench` (hero test-bench hardware, added
-  in the M2 feedback pass: crate/scope/tower staircase in the hero's lower
-  band, decorative playground platforms).
+  in the M2 feedback pass: intake crate / test monitor / rack staircase in the
+  hero's lower band). The bench is an interactive deploy-pipeline toy
+  (`src/components/Bench.jsx`): clicking the crate runs BUILD -> TEST -> SHIP
+  across the three devices with a flake chance, working standalone as pure
+  DOM; the robot supervises the active stage via the director reading
+  `data-pipeline` / `data-failed` off the container. Pipeline visuals only
+  recolor LEDs and screen content; the terrain rects never move.
 - M2 obligations implied by this build: synthesize the ground as a full-width
   rect at the viewport bottom edge (as the sandbox does with #ground); rebuild
   terrain on scroll/resize AND on ResizeObserver of the body, since the rail
@@ -211,7 +216,9 @@ is reachable from the viewport-bottom ground at every scroll position.
   runs. On ready: happy blink plus a "N repos synced" mono stamp. On error: spark,
   glitch face, shrug, "offline mode" stamp.
 - Section jobs (triggered when a section crosses mid-viewport):
-  - Hero: idle-follow the cursor; click reactions that escalate on repeat clicks.
+  - Hero: idle-follow the cursor; click reactions that escalate on repeat
+    clicks; supervise the bench deploy toy while a run is active (added in
+    the M2 feedback pass).
   - Featured: walk along card tops; on card hover, scuttle over, plug into the card's
     port, face tints to the card accent while it "reads".
   - More on GitHub: if fetch is still in flight, reel repo cards out of the hatch as

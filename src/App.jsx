@@ -3,6 +3,7 @@ import { useProjects } from "./hooks/useProjects";
 import ProjectCard from "./components/ProjectCard";
 import RepoCard from "./components/RepoCard";
 import Cable from "./components/Cable";
+import Bench from "./components/Bench";
 import ThemeToggle from "./components/ThemeToggle";
 import RobotOverlay from "./components/RobotOverlay";
 import {
@@ -75,32 +76,11 @@ function App() {
             {portStamp(state, featured.length + repos.length)}
           </span>
         </div>
-        {/* The test bench: decorative lab hardware filling the hero's lower
-            band. Every piece is robot terrain (bottom-aligned so the tops
-            form a hoppable staircase per SPEC 4.2c; the crate sits at the
-            content edge, one hop from the rail clips). No hover transforms. */}
-        <div className="bench" aria-hidden="true">
-          <div className="benchItem crate" data-terrain="bench">
-            <span className="crateGrille" />
-            <span className="benchLabel mono">SPARES</span>
-          </div>
-          <div className="benchItem scope" data-terrain="bench">
-            <span className="scopeScreen" />
-            <span className="benchLabel mono">TEST MON</span>
-          </div>
-          <div className="benchItem tower" data-terrain="bench">
-            <span className="towerSlot">
-              <i />
-            </span>
-            <span className="towerSlot">
-              <i />
-            </span>
-            <span className="towerSlot lit">
-              <i />
-            </span>
-            <span className="benchLabel mono">RK-01</span>
-          </div>
-        </div>
+        {/* The test bench: an interactive deploy-pipeline toy filling the
+            hero's lower band. Every piece is robot terrain (bottom-aligned
+            hoppable staircase per SPEC 4.2c; the crate sits at the content
+            edge, one hop from the rail clips). No hover transforms. */}
+        <Bench />
 
         <a className="scrollCue mono" href="#featured">
           SCROLL

@@ -57,6 +57,8 @@ export class Director {
     this.hover = { el: null, phase: 'none' };
     this.plugFaceT = 0;
     this.amb = { timer: 2.5, phase: null, tug: 0 };
+    this.pipeSeen = null; // last observed bench pipeline phase
+    this.benchEl = null;
     this.followCool = 0;
     this.curT = 0;
     this.curCool = 0;
@@ -383,6 +385,7 @@ export class Director {
 
     switch (this.section) {
       case 'hero': {
+        if (this.updatePipeline()) break; // supervising the deploy toy
         const c = s.cursor;
         if (
           c &&
@@ -534,6 +537,65 @@ export class Director {
       default:
         break;
     }
+  }
+
+  // The bench deploy toy (hero section): chase the active stage across the
+  // bench hardware and supervise with the sync face, cheer a pass, spark on
+  // a flaked stage. Returns true while a run is holding the robot's job.
+  updatePipeline() {
+    const R = this.R;
+    if (!this.benchEl || !this.benchEl.isConnected) {
+      this.benchEl = document.querySelector('.bench');
+      if (!this.benchEl) return false;
+    }
+    const phase = this.benchEl.dataset.pipeline || 'idle';
+    const running = phase === 'build' || phase === 'test' || phase === 'ship';
+    if (phase !== this.pipeSeen) {
+      this.pipeSeen = phase;
+      const device = {
+        build: 'intake',
+        test: 'mon',
+        ship: 'rack',
+        done: 'rack',
+        fail: this.benchEl.dataset.failed === 'test' ? 'mon' : 'intake',
+      }[phase];
+      const seg = device
+        ? this.api.segsByTag('bench').find((g) => g.rect.el.dataset.bench === device)
+        : null;
+      if (running) {
+        R.wakeIfSleeping();
+        if (seg && R.mode === 'ground') {
+          R.commandGotoSeg(seg.id, (seg.x1 + seg.x2) / 2, {
+            noise: 0.1,
+            quiet: true,
+            speed: R.P.walkSpeed * 1.15,
+            onDone: () => {
+              if (this.pipeSeen === phase) R.face.set('sync');
+            },
+          });
+        } else {
+          R.face.set('sync');
+        }
+        this.note(`pipeline: supervising ${phase}`);
+      } else if (phase === 'done') {
+        R.face.set('excited', 1.8);
+        R.bodyYV -= 120 * R.P.scale;
+        this.note('pipeline: deploy passed');
+      } else if (phase === 'fail') {
+        const at = seg ? { x: (seg.x1 + seg.x2) / 2, y: seg.y } : { x: R.x, y: R.bodyY };
+        this.fx.burst(at.x, at.y - 6, 0xf08c3c, 10);
+        R.face.set('angry', 1.4);
+        this.shrugT = 0.7;
+        this.note('pipeline: stage flaked');
+      } else if (phase === 'idle' && R.face.expr === 'sync') {
+        R.face.set('idle');
+      }
+    }
+    if (running) {
+      R.sleepTimer = Math.max(R.sleepTimer, 15);
+      return true;
+    }
+    return false;
   }
 
   // Idle wander bounded to on-screen platforms; the raw robot.startWander()

@@ -292,10 +292,23 @@
 
 .benchItem {
   position: relative;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
   box-shadow: var(--shadow);
+}
+
+button.benchItem {
+  appearance: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button.benchItem:hover {
+  border-color: var(--muted);
 }
 
 .benchLabel {
@@ -321,7 +334,7 @@
   position: absolute;
   top: 8px;
   left: 10px;
-  right: 10px;
+  right: 24px;
   height: 9px;
   border-radius: 2px;
   background: repeating-linear-gradient(
@@ -329,6 +342,49 @@
     var(--line) 0 3px,
     transparent 3px 8px
   );
+}
+
+.benchLed {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--led-off);
+}
+
+/* pipeline states: intake LED */
+.bench[data-pipeline="idle"] .benchLed {
+  background: var(--led);
+  animation: benchHint 3.2s ease-in-out infinite;
+}
+
+.bench[data-pipeline="build"] .benchLed,
+.bench[data-pipeline="test"] .benchLed,
+.bench[data-pipeline="ship"] .benchLed {
+  background: var(--led-warn);
+  animation: blink 0.6s steps(2, start) infinite;
+}
+
+.bench[data-pipeline="done"] .benchLed {
+  background: var(--led);
+  box-shadow: 0 0 5px 0 color-mix(in srgb, var(--led) 60%, transparent);
+}
+
+.bench[data-pipeline="fail"] .benchLed {
+  background: var(--led-err);
+}
+
+@keyframes benchHint {
+  0%,
+  78%,
+  100% {
+    opacity: 0.3;
+  }
+  88% {
+    opacity: 0.95;
+  }
 }
 
 .scope {
@@ -366,6 +422,87 @@
   );
 }
 
+.bench:not([data-pipeline="idle"]) .scopeScreen::after {
+  display: none;
+}
+
+.scopeStatus {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--led-off);
+}
+
+.bench[data-pipeline="build"] .scopeStatus,
+.bench[data-pipeline="test"] .scopeStatus,
+.bench[data-pipeline="ship"] .scopeStatus {
+  color: var(--led-warn);
+}
+
+.bench[data-pipeline="done"] .scopeStatus {
+  color: var(--led);
+}
+
+.bench[data-pipeline="fail"] .scopeStatus {
+  color: var(--led-err);
+}
+
+.scopeBars {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: 7px;
+  height: 9px;
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+}
+
+.scopeBars i {
+  flex: 1;
+  height: 3px;
+  border-radius: 1px;
+  background: var(--led-warn);
+  opacity: 0;
+}
+
+.bench[data-pipeline="build"] .scopeBars i,
+.bench[data-pipeline="test"] .scopeBars i,
+.bench[data-pipeline="ship"] .scopeBars i {
+  opacity: 1;
+  animation: scopeBar 0.7s ease-in-out infinite alternate;
+}
+
+.scopeBars i:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.scopeBars i:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+.bench[data-pipeline="done"] .scopeBars i {
+  opacity: 1;
+  height: 9px;
+  background: var(--led);
+}
+
+.bench[data-pipeline="fail"] .scopeBars i {
+  opacity: 1;
+  background: var(--led-err);
+}
+
+@keyframes scopeBar {
+  from {
+    height: 2px;
+  }
+  to {
+    height: 9px;
+  }
+}
+
 .tower {
   width: 96px;
   height: 152px;
@@ -397,6 +534,12 @@
 .towerSlot.lit i {
   background: var(--led);
   box-shadow: 0 0 5px 0 color-mix(in srgb, var(--led) 60%, transparent);
+}
+
+/* deploying: the empty slots pulse amber while the new service lands */
+.bench[data-pipeline="ship"] .towerSlot:not(.lit) i {
+  background: var(--led-warn);
+  animation: blink 0.5s steps(2, start) infinite;
 }
 
 .scrollCue {
@@ -979,7 +1122,7 @@
   .crateGrille {
     top: 6px;
     left: 8px;
-    right: 8px;
+    right: 20px;
   }
 
   .scope {
@@ -1056,6 +1199,12 @@
   .skelBar {
     animation: none;
     opacity: 0.6;
+  }
+
+  .benchLed,
+  .scopeBars i,
+  .towerSlot i {
+    animation: none !important;
   }
 
   .ledStrip i,
