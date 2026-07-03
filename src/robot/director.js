@@ -105,7 +105,8 @@ export class Director {
     // Big scroll: brace a little (stumbles are disabled, this is the nod to it).
     if (s.scrollSpeed > 2200 && R.state === 'idle' && R.mode === 'ground') {
       R.heightScale = Math.max(0.82, R.heightScale - dt * 2.5);
-      if (R.face.expr === 'idle') R.face.set('curious', 0.5);
+      // a truly violent scroll leaves it reeling for a beat
+      if (R.face.expr === 'idle') R.face.set(s.scrollSpeed > 3600 ? 'dizzy' : 'curious', 0.6);
     }
 
     this.updateSection(dt, s);
@@ -175,7 +176,7 @@ export class Director {
         this.curT = 0;
         this.curCool = randRange(8, 14);
         const dir = Math.sign(c.x - R.x) || 1;
-        R.face.set('curious', 1.4);
+        R.face.set('suspicious', 1.6); // eyes it sideways before creeping over
         R.commandGoto(c.x - dir * 80, c.y, {
           noise: 0.5,
           speed: R.P.wanderSpeed * 0.7,
@@ -196,7 +197,7 @@ export class Director {
     if (this.pokes.length >= 3) {
       this.pokes = [];
       const R = this.R;
-      R.face.set('glitch', 1.2);
+      R.face.set('angry', 1.4);
       this.shrugT = 0.7;
       this.fx.burst(R.headX, R.headY - 10, 0xf08c3c, 6);
       const flee = R.x - R.facing * 130;
@@ -260,7 +261,7 @@ export class Director {
     const R = this.R;
     this.note(`fetch reaction: ${state}`);
     if (state === 'ready') {
-      R.face.set('happy', 2.0);
+      R.face.set('excited', 2.2);
       R.bodyYV -= 140 * R.P.scale;
       this.api.emit('synced');
     } else {
@@ -515,7 +516,7 @@ export class Director {
                 R.facing = 1;
                 R.executor.maneuver = makeWave(R);
                 R.mode = 'maneuver';
-                R.face.set('happy', 1.6);
+                R.face.set('wink', 1.6);
                 this.note('contact: waving');
               },
               onFail: () => {
@@ -587,7 +588,7 @@ export class Director {
         R.startle(Math.sign(R.x - x) || -R.facing);
       }
     } else {
-      R.face.set('glitch', 1.1);
+      R.face.set('angry', 1.2);
       this.shrugT = 0.7;
       const port = this.api.segsByTag('port')[0];
       if (port) {

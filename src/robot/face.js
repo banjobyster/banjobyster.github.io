@@ -7,6 +7,9 @@ import { clamp, randRange } from './math.js';
 export const FACE_W = 16;
 export const FACE_H = 12;
 
+// Expressions that re-render every frame (the rest only redraw on gaze/blink).
+const ANIMATED = new Set(['glitch', 'sync', 'dizzy', 'excited', 'angry', 'suspicious']);
+
 export class Face {
   constructor() {
     this.buf = new Uint8Array(FACE_W * FACE_H);
@@ -57,7 +60,7 @@ export class Face {
       if (this.blinkTimer <= 0) this.blinkPhase = 0.0001;
     }
 
-    if (this.expr === 'glitch' || this.expr === 'sync') this.dirty = true; // animate every frame
+    if (ANIMATED.has(this.expr)) this.dirty = true; // animate every frame
     if (this.dirty) this.render();
   }
 
@@ -144,6 +147,85 @@ export class Face {
       case 'sleepy': {
         this.block(3, 5, 3, 2, 1);
         this.block(10, 5, 3, 2, 1);
+        break;
+      }
+      case 'excited': {
+        // Bouncing chevron eyes, an open grin, twinkling corner sparkles.
+        const b = Math.sin(this.t * 10) > 0 ? 1 : 0;
+        for (const c of [3, 10]) {
+          this.px(c, 5 - b, 2);
+          this.px(c + 1, 4 - b, 3);
+          this.px(c + 2, 4 - b, 3);
+          this.px(c + 3, 5 - b, 2);
+        }
+        this.block(6, 8, 4, 2, 2);
+        this.block(7, 8, 2, 1, 3);
+        const tw = ((this.t * 6) | 0) % 2;
+        this.px(1, 2, tw ? 3 : 1);
+        this.px(14, 6, tw ? 1 : 3);
+        this.px(13, 1, tw ? 2 : 1);
+        break;
+      }
+      case 'dizzy': {
+        // Counter-rotating pupils orbiting dim eye plates, a wobbling mouth.
+        const ORBIT = [
+          [1, 0],
+          [2, 1],
+          [1, 2],
+          [0, 1],
+        ];
+        const k = (this.t * 8) | 0;
+        for (const [c, off] of [
+          [3, 0],
+          [10, 2],
+        ]) {
+          this.block(c, 3, 3, 4, 1);
+          const [ox, oy] = ORBIT[(k + off) % 4];
+          this.px(c + ox, 3 + oy + 1, 3);
+        }
+        for (let x = 5; x <= 10; x++) this.px(x, 9 + ((x + k) % 2), 1);
+        break;
+      }
+      case 'angry': {
+        // Brows slanted hard toward the center, narrowed hot eyes, gritted
+        // mouth; the brows tremble sideways like it is fuming.
+        const j = ((this.t * 14) | 0) % 2;
+        for (const [bx, dir] of [
+          [2, 1],
+          [13, -1],
+        ]) {
+          this.px(bx + j * dir, 2, 2);
+          this.px(bx + dir + j * dir, 2, 2);
+          this.px(bx + dir * 2 + j * dir, 3, 2);
+          this.px(bx + dir * 3 + j * dir, 3, 2);
+        }
+        this.block(3, 5, 3, 2, 2);
+        this.px(4, 5, 3);
+        this.block(10, 5, 3, 2, 2);
+        this.px(11, 5, 3);
+        for (let x = 5; x <= 10; x++) this.px(x, 9, x % 2 ? 2 : 1);
+        break;
+      }
+      case 'suspicious': {
+        // Flat-lidded eyes, both pupils sweeping slowly side to side in sync.
+        const sl = Math.round(Math.sin(this.t * 2.2) * 1.4);
+        for (const c of [3, 10]) {
+          this.block(c, 4, 3, 2, 1);
+          this.px(clamp(c + 1 + sl, c, c + 2), 5, 3);
+        }
+        this.block(6, 9, 3, 1, 1);
+        break;
+      }
+      case 'wink': {
+        // One eye open and tracking, the other a closed happy arc, plus the
+        // full smile. Used as a wave flourish.
+        this.eye(3, 3, 3, 4, true);
+        this.px(9, 4, 1);
+        this.block(10, 5, 3, 1, 2);
+        this.px(13, 4, 1);
+        this.px(5, 8, 2);
+        this.block(6, 9, 4, 1, 2);
+        this.px(10, 8, 2);
         break;
       }
       case 'portrait': {
