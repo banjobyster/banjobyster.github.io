@@ -16,12 +16,13 @@
 //   onTerrainRebuilt?(ctx)
 //
 // The priority ladder encodes the SPEC 4.2b arbitration:
-//   boot (100) > hover-card (80) > catch-up (60) > pipeline (50)
-//   > reactions (40) > curiosity (30) > section ambience (10)
+//   boot (100) > hover-card (80) > catch-up (60) > repair (55)
+//   > pipeline (50) > reactions (40) > curiosity (30) > section ambience (10)
 
 import { boot } from './boot.js';
 import { hoverCard } from './hover-card.js';
 import { catchUp } from './catch-up.js';
+import { repair } from './repair.js';
 import { pipeline } from './pipeline.js';
 import { reactions } from './reactions.js';
 import { curiosity } from './curiosity.js';
@@ -38,6 +39,7 @@ export function defaultBehaviors() {
     boot(),
     hoverCard(),
     catchUp(),
+    repair(),
     pipeline(),
     reactions(),
     curiosity(),

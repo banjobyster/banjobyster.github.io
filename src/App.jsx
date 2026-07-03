@@ -6,6 +6,7 @@ import Cable from "./components/Cable";
 import Bench from "./components/Bench";
 import ThemeToggle from "./components/ThemeToggle";
 import RobotOverlay from "./components/RobotOverlay";
+import { useStation } from "./components/stations";
 import {
   IconGitHub,
   IconLinkedIn,
@@ -30,6 +31,11 @@ function portStamp(state, count) {
 
 function App() {
   const { featured, repos, state } = useProjects();
+  // Two more task stations the robot cast fights over: the hero dock (the
+  // port row) and the storage bay (the repo hatch). React owns their state;
+  // the robots request changes through the station event bus.
+  const dockState = useStation("dock");
+  const bayState = useStation("bay");
 
   return (
     <div id="page">
@@ -59,7 +65,12 @@ function App() {
             <IconMail />
           </a>
         </div>
-        <div className="portRow" data-terrain="port-row">
+        <div
+          className="portRow"
+          data-terrain="port-row"
+          data-station="dock"
+          data-state={dockState}
+        >
           <span className="portJack" id="port" data-terrain="port" aria-hidden="true">
             <i />
           </span>
@@ -104,7 +115,12 @@ function App() {
             github.com/{GITHUB_USER} ↗
           </a>
         </h2>
-        <div className="hatch" data-terrain="hatch">
+        <div
+          className="hatch"
+          data-terrain="hatch"
+          data-station="bay"
+          data-state={bayState}
+        >
           <span className="hatchGrille" aria-hidden="true" />
           <span className="hatchLabel mono">EXT STORAGE</span>
         </div>

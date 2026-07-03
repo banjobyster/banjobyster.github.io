@@ -1174,6 +1174,102 @@ button.benchItem:hover {
   }
 }
 
+/* ---------------- task stations (Part 3c) ----------------
+   A station is any [data-station] element with data-state ok|broken|busy.
+   The villain shorts one out (broken), the hero resets it (busy, then ok).
+   State reads as an LED-glow ring around the box plus a recolor of whatever
+   LED that station already has. Effects are box-shadow and color only, never
+   a transform: these elements are robot terrain and their rects must not
+   move (SPEC 4.2c). */
+
+[data-station] {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+[data-station][data-state="broken"] {
+  border-color: var(--led-err);
+  animation: stationBroken 1.05s steps(3, end) infinite;
+}
+
+[data-station][data-state="busy"] {
+  border-color: var(--led-warn);
+  animation: stationBusy 1.1s ease-in-out infinite;
+}
+
+@keyframes stationBroken {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px var(--led-err),
+      0 0 11px -1px color-mix(in srgb, var(--led-err) 55%, transparent);
+  }
+  45% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--led-err) 35%, transparent),
+      0 0 2px -1px transparent;
+  }
+}
+
+@keyframes stationBusy {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px var(--led-warn),
+      0 0 6px -1px color-mix(in srgb, var(--led-warn) 45%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px var(--led-warn),
+      0 0 13px 0 color-mix(in srgb, var(--led-warn) 60%, transparent);
+  }
+}
+
+/* Per-station LED recolor, placed after the hover/pipeline rules so a broken
+   or busy state wins over them. */
+.device[data-station][data-state="broken"] .ledStrip i,
+.device[data-station][data-state="broken"]:hover .ledStrip i,
+.device[data-station][data-state="broken"]:focus-within .ledStrip i {
+  background: var(--led-err);
+}
+
+.device[data-station][data-state="busy"] .ledStrip i,
+.device[data-station][data-state="busy"]:hover .ledStrip i,
+.device[data-station][data-state="busy"]:focus-within .ledStrip i {
+  background: var(--led-warn);
+}
+
+.portRow[data-state="broken"] .portJack i {
+  background: var(--led-err);
+}
+
+.portRow[data-state="busy"] .portJack i {
+  background: var(--led-warn);
+}
+
+.hatch[data-state="broken"] .hatchGrille {
+  background: repeating-linear-gradient(
+    to right,
+    var(--led-err) 0 3px,
+    transparent 3px 8px
+  );
+}
+
+.hatch[data-state="busy"] .hatchGrille {
+  background: repeating-linear-gradient(
+    to right,
+    var(--led-warn) 0 3px,
+    transparent 3px 8px
+  );
+}
+
+.tower[data-state="broken"] .towerSlot i {
+  background: var(--led-err);
+}
+
+.tower[data-state="busy"] .towerSlot i {
+  background: var(--led-warn);
+}
+
 /* ---------------- reduced motion ---------------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1205,5 +1301,17 @@ button.benchItem:hover {
   .screenGlass img,
   .devicePort::before {
     transition: none;
+  }
+
+  /* Stations keep their state color but drop the pulse. A static ring still
+     reads as broken/busy without the flicker. */
+  [data-station][data-state="broken"] {
+    animation: none;
+    box-shadow: 0 0 0 1px var(--led-err);
+  }
+
+  [data-station][data-state="busy"] {
+    animation: none;
+    box-shadow: 0 0 0 1px var(--led-warn);
   }
 }

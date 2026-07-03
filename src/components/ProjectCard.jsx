@@ -1,10 +1,15 @@
 import { renderText } from "../lib/text.jsx";
+import { useStation } from "./stations";
 
 // A featured project as a device faceplate: dark screen well on the left,
 // spec plate on the right, LED strip and port in the project's accent color.
 // Hovering (or keyboard focus) powers the device on: LEDs light in sequence,
 // the screen brightens, tags tint. The card is robot terrain; hover effects
 // never move its rect.
+//
+// The first featured card doubles as a task station ("rig"): the villain can
+// short its LED strip out (broken) and the hero resets it. Only card zero
+// carries the station so the featured section has exactly one, per Part 3c.
 export default function ProjectCard({
   title,
   tagline,
@@ -16,8 +21,16 @@ export default function ProjectCard({
   index = 0,
 }) {
   const unit = String(index + 1).padStart(2, "0");
+  const isStation = index === 0;
+  const stationState = useStation(isStation ? "rig" : null);
   return (
-    <article className="device" data-terrain="card" style={{ "--accent": accent }}>
+    <article
+      className="device"
+      data-terrain="card"
+      data-station={isStation ? "rig" : undefined}
+      data-state={isStation ? stationState : undefined}
+      style={{ "--accent": accent }}
+    >
       <a
         className="deviceScreen"
         href={link}

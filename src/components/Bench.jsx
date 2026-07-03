@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useStation } from "./stations";
 
 // The hero test bench, now a working toy: a tiny deploy pipeline. Clicking
 // the intake crate runs BUILD on the crate, TEST on the monitor, then SHIP
@@ -30,6 +31,10 @@ export default function Bench() {
   const [failedStage, setFailedStage] = useState(null);
   const [builds, setBuilds] = useState(0);
   const timer = useRef(0);
+  // The rack is a task station: the villain can knock it offline, the hero
+  // resets it. The pipeline toy stays fully usable regardless of the station
+  // state; the two only share the box.
+  const rackState = useStation("rack");
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
@@ -94,7 +99,14 @@ export default function Bench() {
         </span>
         <span className="benchLabel mono">TEST MON</span>
       </div>
-      <div className="benchItem tower" data-terrain="bench" data-bench="rack" aria-hidden="true">
+      <div
+        className="benchItem tower"
+        data-terrain="bench"
+        data-bench="rack"
+        data-station="rack"
+        data-state={rackState}
+        aria-hidden="true"
+      >
         {[0, 1, 2].map((i) => (
           <span key={i} className={`towerSlot${i < litSlots ? " lit" : ""}`}>
             <i />
