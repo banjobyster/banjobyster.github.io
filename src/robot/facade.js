@@ -11,9 +11,15 @@
 // Viewport companionship without teleports: the compiled graph includes a
 // corridor of platforms ~600px beyond the viewport, so a robot left behind
 // always has a real route back (the cable ladder). The director issues the
-// catch-up route; when the robot is left VERY far behind, it is repositioned
+// catch-up route; when a robot is left VERY far behind, it is repositioned
 // only while fully offscreen, onto a corridor platform just beyond the near
 // edge, and still climbs or drops into view on its own legs.
+//
+// Multi-robot (Phase B4): opts.robots = [{ character, behaviors }] mounts a
+// cast. Everything page-shaped is shared: one Pixi Application, one world
+// container, one terrain graph, one sensor set. Each robot gets its own
+// Robot, RobotRenderer, Effects, and Director; robots[0] is the primary and
+// owns the handle surface (goto, setExpression) and the emitted events.
 
 import { Container, Graphics } from 'pixi.js';
 import { createOverlay } from './engine/overlay.js';
@@ -23,13 +29,13 @@ import { RobotRenderer } from './engine/renderer.js';
 import { CRT_TODDLER } from './characters/crt-toddler.js';
 import { Effects } from './effects.js';
 import { Director } from './director.js';
-import { defaultBehaviors } from './behaviors/index.js';
+import { defaultBehaviors, ambientBehaviors } from './behaviors/index.js';
 import { clamp } from './engine/math.js';
 
 const REBUILD_MS = 150;
 const CORRIDOR = 600; // graph extends this far beyond the viewport
 const SWAP_SNAP = 130; // silent snap only when a platform ELEMENT is replaced in place
-// Offscreen distances beyond which the robot is quietly moved (while unseen)
+// Offscreen distances beyond which a robot is quietly moved (while unseen)
 // to just outside the near edge before walking in. Coming down is a fast
 // drop chain, coming up is a slow climb chain, hence the asymmetry.
 const SHORTCUT_ABOVE = 900;
@@ -53,14 +59,12 @@ export async function mountRobot(opts = {}) {
   const world = new Container();
   app.stage.addChild(world);
 
-  const robot = new Robot(opts.character || CRT_TODDLER);
-  robot.autoWander = false; // the director owns ambient movement on the site
-  const effects = new Effects(robot);
-  world.addChild(effects.under);
-  const renderer = new RobotRenderer(world, robot.character);
-  world.addChild(effects.over);
-  const debugG = debug ? new Graphics() : null;
-  if (debugG) world.addChild(debugG);
+  // Cast list: default is the lone CRT toddler with the full site set. Extra
+  // robots without an explicit behavior set get the ambient one; only the
+  // primary should ever run boot/hover/pipeline theater.
+  const specs = opts.robots || [
+    { character: opts.character || CRT_TODDLER, behaviors: opts.behaviors },
+  ];
 
   let graph = null;
   let groundIx = -1;
@@ -89,8 +93,29 @@ export async function mountRobot(opts = {}) {
     graph: () => graph,
     getPageState,
     emit,
+    // Every mounted Robot instance, so behaviors can see the rest of the cast
+    // (the villain's flee checks the hero's position through this).
+    robots: () => robots.map((rec) => rec.robot),
   };
-  const director = new Director(robot, effects, renderer, api, opts.behaviors || defaultBehaviors());
+
+  // Robots first, directors second: behavior init() may read api.robots().
+  const robots = specs.map((spec) => {
+    const robot = new Robot(spec.character || CRT_TODDLER);
+    robot.autoWander = false; // the director owns ambient movement on the site
+    const effects = new Effects(robot);
+    world.addChild(effects.under);
+    const renderer = new RobotRenderer(world, robot.character);
+    world.addChild(effects.over);
+    return { robot, effects, renderer, director: null, sleepAccum: 0 };
+  });
+  robots.forEach((rec, i) => {
+    const behaviors = specs[i].behaviors || (i === 0 ? defaultBehaviors() : ambientBehaviors());
+    rec.director = new Director(rec.robot, rec.effects, rec.renderer, api, behaviors);
+  });
+  const primary = robots[0];
+
+  const debugG = debug ? new Graphics() : null;
+  if (debugG) world.addChild(debugG);
 
   // ---------------- terrain ----------------
 
@@ -99,13 +124,15 @@ export async function mountRobot(opts = {}) {
     const sx = window.scrollX;
     const vh = window.innerHeight;
     // Corridor band: the viewport plus CORRIDOR on both sides, stretched to
-    // include wherever the robot currently is, so it always has a real route
-    // back instead of being teleported.
+    // include wherever every robot currently is, so each always has a real
+    // route back instead of being teleported.
     let lo = sy - CORRIDOR;
     let hi = sy + vh + CORRIDOR;
     if (spawned) {
-      lo = Math.min(lo, robot.bodyY - 100);
-      hi = Math.max(hi, robot.bodyY + 100);
+      for (const rec of robots) {
+        lo = Math.min(lo, rec.robot.bodyY - 100);
+        hi = Math.max(hi, rec.robot.bodyY + 100);
+      }
     }
     const rects = [];
     for (const el of document.querySelectorAll('[data-terrain]')) {
@@ -145,8 +172,8 @@ export async function mountRobot(opts = {}) {
     }
   };
 
-  // How far the robot is beyond the viewport edges (0 while visible).
-  const offscreenBy = () => {
+  // How far a robot is beyond the viewport edges (0 while visible).
+  const offscreenBy = (robot) => {
     const sy = window.scrollY;
     const vh = window.innerHeight;
     if (robot.bodyY < sy) return robot.bodyY - sy; // negative: above
@@ -154,10 +181,11 @@ export async function mountRobot(opts = {}) {
     return 0;
   };
 
-  // Quietly reposition the robot WHILE FULLY OFFSCREEN onto a corridor
+  // Quietly reposition a robot WHILE FULLY OFFSCREEN onto a corridor
   // platform just beyond the near viewport edge, facing inward. The user
   // never sees this; the entrance is always a real climb or drop chain.
-  const shortcutPlace = () => {
+  const shortcutPlace = (rec) => {
+    const { robot, director } = rec;
     const sy = window.scrollY;
     const vh = window.innerHeight;
     const above = robot.bodyY < sy + vh / 2;
@@ -214,7 +242,11 @@ export async function mountRobot(opts = {}) {
     if (disposed) return;
     // Mid-maneuver coordinates live in closures; landing on a stale graph is
     // worse than rebuilding 120ms late, so wait for touchdown (bounded).
-    if (robot.mode === 'maneuver' && spawned && deferredRebuilds < 6) {
+    if (
+      spawned &&
+      robots.some((rec) => rec.robot.mode === 'maneuver') &&
+      deferredRebuilds < 6
+    ) {
       deferredRebuilds += 1;
       clearTimeout(rebuildTimer);
       rebuildTimer = setTimeout(rebuild, 120);
@@ -222,30 +254,34 @@ export async function mountRobot(opts = {}) {
     }
     deferredRebuilds = 0;
 
-    const prev = spawned && graph ? graph.segments[robot.seg] : null;
+    const prevs = spawned && graph ? robots.map((rec) => graph.segments[rec.robot.seg]) : null;
     graph = compileTerrain(collectRects());
     groundIx = graph.segments.length - 1;
 
-    if (prev) {
-      const sameIx = graph.segments.findIndex((s) =>
-        prev.rect.el ? s.rect.el === prev.rect.el : s.rect.tag === 'ground',
-      );
-      if (sameIx >= 0) {
-        robot.rebindTerrain(graph, sameIx);
-      } else {
-        // The element itself is gone (e.g. skeleton cards swapped for live
-        // ones in place): a tiny snap is invisible; anything else means the
-        // robot is offscreen and gets the corridor shortcut.
-        const near = nearestPointOnTerrain(graph, robot.x, robot.bodyY);
-        if (near && offscreenBy() === 0 && near.d < SWAP_SNAP) robot.setTerrain(graph);
-        else shortcutPlace();
-      }
-      // Left far behind: reposition offscreen so the walk-in stays short.
-      const off = offscreenBy();
-      if ((off < -SHORTCUT_ABOVE || off > SHORTCUT_BELOW) && robot.mode === 'ground') {
-        shortcutPlace();
-      }
-      director.onTerrainRebuilt();
+    if (prevs) {
+      robots.forEach((rec, i) => {
+        const { robot } = rec;
+        const prev = prevs[i];
+        const sameIx = graph.segments.findIndex((s) =>
+          prev.rect.el ? s.rect.el === prev.rect.el : s.rect.tag === 'ground',
+        );
+        if (sameIx >= 0) {
+          robot.rebindTerrain(graph, sameIx);
+        } else {
+          // The element itself is gone (e.g. skeleton cards swapped for live
+          // ones in place): a tiny snap is invisible; anything else means the
+          // robot is offscreen and gets the corridor shortcut.
+          const near = nearestPointOnTerrain(graph, robot.x, robot.bodyY);
+          if (near && offscreenBy(robot) === 0 && near.d < SWAP_SNAP) robot.setTerrain(graph);
+          else shortcutPlace(rec);
+        }
+        // Left far behind: reposition offscreen so the walk-in stays short.
+        const off = offscreenBy(robot);
+        if ((off < -SHORTCUT_ABOVE || off > SHORTCUT_BELOW) && robot.mode === 'ground') {
+          shortcutPlace(rec);
+        }
+        rec.director.onTerrainRebuilt();
+      });
     }
     drawDebug();
   };
@@ -257,20 +293,27 @@ export async function mountRobot(opts = {}) {
 
   const spawn = () => {
     rebuild();
-    // The robot is already on the hero when the page loads (SPEC 4.4); if the
-    // page opens scrolled elsewhere, wake on the platform nearest mid-view.
-    const heroVis = api.segsByTag('hero');
-    let ix = heroVis.length ? heroVis[0].id : -1;
-    if (ix < 0) {
-      const near = nearestPointOnTerrain(
-        graph,
-        window.innerWidth * 0.45,
-        window.scrollY + window.innerHeight * 0.5,
-      );
-      ix = near ? near.seg : groundIx;
-    }
-    const s = graph.segments[ix];
-    robot.spawn(graph, ix, s.x1 + (s.x2 - s.x1) * 0.6);
+    // The primary is already on the hero when the page loads (SPEC 4.4); if
+    // the page opens scrolled elsewhere, wake on the platform nearest
+    // mid-view. Extra robots start lower and to the right so the cast never
+    // stacks on one spot.
+    robots.forEach((rec, i) => {
+      let ix = -1;
+      if (i === 0) {
+        const heroVis = api.segsByTag('hero');
+        if (heroVis.length) ix = heroVis[0].id;
+      }
+      if (ix < 0) {
+        const near = nearestPointOnTerrain(
+          graph,
+          window.innerWidth * (i === 0 ? 0.45 : 0.8),
+          window.scrollY + window.innerHeight * (i === 0 ? 0.5 : 0.78),
+        );
+        ix = near ? near.seg : groundIx;
+      }
+      const s = graph.segments[ix];
+      rec.robot.spawn(graph, ix, s.x1 + (s.x2 - s.x1) * (i === 0 ? 0.6 : 0.35));
+    });
     spawned = true;
   };
 
@@ -302,13 +345,23 @@ export async function mountRobot(opts = {}) {
     if (!spawned) return;
     const x = e.clientX + window.scrollX;
     const y = e.clientY + window.scrollY;
-    const dBody = Math.hypot(x - robot.x, y - robot.bodyY);
-    const dHead = Math.hypot(x - robot.headX, y - robot.headY);
-    if (dBody < 24 || dHead < 36) {
-      robot.poke();
-      director.onPoke();
+    // Poke hit-testing checks the whole cast; the nearest hit takes it.
+    let hit = null;
+    let hitD = Infinity;
+    for (const rec of robots) {
+      const { robot } = rec;
+      const dBody = Math.hypot(x - robot.x, y - robot.bodyY);
+      const dHead = Math.hypot(x - robot.headX, y - robot.headY);
+      if ((dBody < 24 || dHead < 36) && Math.min(dBody, dHead) < hitD) {
+        hit = rec;
+        hitD = Math.min(dBody, dHead);
+      }
+    }
+    if (hit) {
+      hit.robot.poke();
+      hit.director.onPoke();
     } else {
-      director.onPageClick(x, y, e.target);
+      for (const rec of robots) rec.director.onPageClick(x, y, e.target);
     }
   };
 
@@ -331,7 +384,6 @@ export async function mountRobot(opts = {}) {
 
   // ---------------- main loop ----------------
 
-  let sleepAccum = 0;
   let prevState = null;
 
   const step = (dt) => {
@@ -352,9 +404,12 @@ export async function mountRobot(opts = {}) {
       gs.y = gy;
       gs.rect.y = gy;
       for (const n of graph.nodes) if (n.seg === gs.id) n.y = gy;
-      if (robot.mode === 'ground' && robot.seg === gs.id) {
-        robot.bodyY += dy;
-        for (const f of robot.gait.feet) f.y += dy;
+      for (const rec of robots) {
+        const { robot } = rec;
+        if (robot.mode === 'ground' && robot.seg === gs.id) {
+          robot.bodyY += dy;
+          for (const f of robot.gait.feet) f.y += dy;
+        }
       }
     }
 
@@ -374,27 +429,31 @@ export async function mountRobot(opts = {}) {
       : null;
     const sensors = { cursor: cursorDoc, hoverCard, scrollY: sy, vh, scrollSpeed };
 
-    // near-zero work while sleeping: robot sim at ~11Hz, effects stay live
-    if (robot.state === 'sleep' && !robot.executor.active) {
-      sleepAccum += dt;
-      effects.update(dt);
-      if (sleepAccum < 0.09) return;
-      robot.update(sleepAccum, { cursor: cursorDoc });
-      director.update(sleepAccum, sensors);
-      renderer.draw(robot, sleepAccum);
-      sleepAccum = 0;
-    } else {
-      sleepAccum = 0;
-      robot.update(dt, { cursor: cursorDoc });
-      director.update(dt, sensors);
-      effects.update(dt);
-      renderer.draw(robot, dt);
+    for (const rec of robots) {
+      const { robot } = rec;
+      // near-zero work while sleeping, per robot: sim at ~11Hz, effects live
+      if (robot.state === 'sleep' && !robot.executor.active) {
+        rec.sleepAccum += dt;
+        rec.effects.update(dt);
+        if (rec.sleepAccum < 0.09) continue;
+        robot.update(rec.sleepAccum, { cursor: cursorDoc });
+        rec.director.update(rec.sleepAccum, sensors);
+        rec.renderer.draw(robot, rec.sleepAccum);
+        rec.sleepAccum = 0;
+      } else {
+        rec.sleepAccum = 0;
+        robot.update(dt, { cursor: cursorDoc });
+        rec.director.update(dt, sensors);
+        rec.effects.update(dt);
+        rec.renderer.draw(robot, dt);
+      }
     }
 
-    if (robot.state !== prevState) {
-      if (robot.state === 'sleep') emit('sleep');
+    // sleep/wake events track the primary only
+    if (primary.robot.state !== prevState) {
+      if (primary.robot.state === 'sleep') emit('sleep');
       else if (prevState === 'sleep') emit('wake');
-      prevState = robot.state;
+      prevState = primary.robot.state;
     }
 
     // live data landed: the repo grid staggers in over ~0.4s + 45ms per card;
@@ -433,10 +492,10 @@ export async function mountRobot(opts = {}) {
       const ix = api.segFor(el);
       if (ix < 0) return false;
       const s = graph.segments[ix];
-      return robot.commandGotoSeg(ix, (s.x1 + s.x2) / 2, {});
+      return primary.robot.commandGotoSeg(ix, (s.x1 + s.x2) / 2, {});
     },
     setExpression(name, hold = 0) {
-      robot.face.set(name, hold);
+      primary.robot.face.set(name, hold);
     },
     on(ev, cb) {
       (listeners[ev] = listeners[ev] || []).push(cb);
@@ -449,9 +508,10 @@ export async function mountRobot(opts = {}) {
   if (debug) {
     const dbg = {
       handle,
-      robot,
-      director,
-      effects,
+      robot: primary.robot,
+      director: primary.director,
+      effects: primary.effects,
+      robots,
       app,
       graph: () => graph,
       rebuild,
