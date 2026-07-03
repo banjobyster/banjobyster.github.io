@@ -2,7 +2,7 @@
 // drifts past a speed-scaled threshold from its rest anchor; diagonal pairs
 // alternate; each step is a short parabolic swing.
 
-import { clamp, lerp, randRange } from './math.js';
+import { clamp, lerp, easeInOutQuad, randRange } from './math.js';
 
 const PAIRS = [
   [0, 2], // front-near + back-far
@@ -19,6 +19,7 @@ export class Gait {
       override: false, // true while a maneuver drives this foot directly
     }));
     this.fidgetTimer = randRange(2, 4);
+    this.landed = 0; // swings that planted this frame; the robot reads it for step weight
   }
 
   reset(bodyX, surfY, facing) {
@@ -31,9 +32,11 @@ export class Gait {
     }
   }
 
-  startSwing(i, toX, toY, dur, h) {
+  // delay staggers the two feet of a diagonal pair so they never move in
+  // robotic lockstep; the swing sits parked until t crosses zero.
+  startSwing(i, toX, toY, dur, h, delay = 0) {
     const f = this.feet[i];
-    f.swing = { fromX: f.x, fromY: f.y, toX, toY, t: 0, dur, h };
+    f.swing = { fromX: f.x, fromY: f.y, toX, toY, t: -delay, dur, h };
   }
 
   pairSwinging(pairIx) {
@@ -43,17 +46,23 @@ export class Gait {
   update(dt, bodyX, vel, surfY, facing, segX1, segX2) {
     const P = this.P;
 
+    this.landed = 0;
     for (const f of this.feet) {
       if (f.override || !f.swing) continue;
       const s = f.swing;
       s.t += dt;
+      if (s.t <= 0) continue; // staggered start, parked until its turn
       const u = clamp(s.t / s.dur, 0, 1);
-      f.x = lerp(s.fromX, s.toX, u);
-      f.y = lerp(s.fromY, s.toY, u) - s.h * 4 * u * (1 - u);
+      // Ease the horizontal so the foot decelerates into the plant; skew the
+      // arc so it lifts fast and reaches down longer (peak near u = 0.38).
+      f.x = lerp(s.fromX, s.toX, easeInOutQuad(u));
+      const ua = Math.pow(u, 0.72);
+      f.y = lerp(s.fromY, s.toY, u) - s.h * 4 * ua * (1 - ua);
       if (u >= 1) {
         f.x = s.toX;
         f.y = s.toY;
         f.swing = null;
+        this.landed++;
       }
     }
 
@@ -71,11 +80,13 @@ export class Gait {
         return { i, anchor, err: Math.abs(this.feet[i].x - anchor) };
       });
       if (errs.some((e) => e.err > threshold)) {
+        let k = 0;
         for (const e of errs) {
           if (e.err > threshold * 0.45) {
             const lead = vel * 0.12;
             const toX = clamp(e.anchor + lead, segX1 - 2, segX2 + 2);
-            this.startSwing(e.i, toX, surfY, swingDur, swingH);
+            this.startSwing(e.i, toX, surfY, swingDur, swingH, k * 0.04);
+            k++;
           }
         }
         break; // one pair per frame at most

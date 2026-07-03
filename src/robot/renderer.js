@@ -4,7 +4,7 @@
 
 import { Container, Graphics } from 'pixi.js';
 import { FACE_W, FACE_H } from './face.js';
-import { clamp } from './math.js';
+import { clamp, qbez } from './math.js';
 
 const COL = {
   bezel: 0xd3d7dc,
@@ -29,6 +29,10 @@ export class RobotRenderer {
     this.pix = COL.pix; // face palette; the director may tint it to a card accent
     this.root = new Container();
     parent.addChild(this.root);
+
+    // Per-leg secondary-motion state, keyed by the leg's index on the robot:
+    // ring spread lags the core on stretch, the core bows against fast swings.
+    this.legState = [0, 1, 2, 3].map(() => ({ spread: 0, whip: 0, fx: 0, fy: 0, init: false }));
 
     this.shadowG = new Graphics();
     this.legsFar = new Graphics();
@@ -98,10 +102,14 @@ export class RobotRenderer {
   // Accordion legs: a stretchy inner core wrapped in hard rings. The rings
   // never deform; they just ride the core, sitting flush at rest, spreading
   // apart when the leg reaches, and stacking up when it compresses. The core
-  // thins as it stretches, which sells the elastic.
-  drawLegs(g, legs, coreColor, ringColor, width) {
+  // thins as it stretches, which sells the elastic. Two layers of secondary
+  // motion: the ring stack (anchored at the boot) lags a beat behind a sudden
+  // stretch before spreading, and the core bows against fast sideways swings.
+  drawLegs(g, legs, coreColor, ringColor, width, dt) {
     const RINGS = 4;
+    const S = this.P.scale;
     for (const l of legs) {
+      const st = this.legState[l.i];
       const hx = l.hip.x;
       const hy = l.hip.y;
       let dx = l.foot.x - hx;
@@ -117,19 +125,47 @@ export class RobotRenderer {
       }
       const ux = dx / len;
       const uy = dy / len;
+
+      if (!st.init) {
+        st.init = true;
+        st.spread = len;
+        st.fx = l.foot.x;
+        st.fy = l.foot.y;
+      }
+      // Compression snaps (the stack rides the boot down); stretch spreads
+      // with a short lag, so reaches read as the accordion pulling open.
+      st.spread += (len - st.spread) * (len < st.spread ? 1 : 1 - Math.exp(-dt * 14));
+      if (dt > 0.0001) {
+        const lv = ((l.foot.x - st.fx) * -uy + (l.foot.y - st.fy) * ux) / dt;
+        st.whip += (clamp(lv * -0.004, -3, 3) * S - st.whip) * (1 - Math.exp(-dt * 12));
+      }
+      st.fx = l.foot.x;
+      st.fy = l.foot.y;
+
+      const cpx = hx + ux * len * 0.5 - uy * st.whip;
+      const cpy = hy + uy * len * 0.5 + ux * st.whip;
+      const ex = hx + ux * (len - 0.5);
+      const ey = hy + uy * (len - 0.5);
+      const px = (t) => qbez(hx, cpx, ex, t);
+      const py = (t) => qbez(hy, cpy, ey, t);
+
       const coreW = width * 0.6 * clamp(Math.pow(1 / s, 0.5), 0.45, 1);
       g.moveTo(hx + ux, hy + uy)
-        .lineTo(hx + ux * (len - 0.5), hy + uy * (len - 0.5))
+        .quadraticCurveTo(cpx, cpy, ex, ey)
         .stroke({ width: coreW, color: coreColor, cap: 'round' });
+
       const ringLen = l.rest / RINGS;
+      // stretch biases the stack toward the boot: the bare core shows hip-side
+      const bias = clamp(st.spread / l.rest, 1, 1.5);
       for (let i = 0; i < RINGS; i++) {
-        const c = ((i + 0.5) / RINGS) * len;
-        const a = c - ringLen / 2;
-        const b = c + ringLen / 2;
+        const c = len - Math.pow(1 - (i + 0.5) / RINGS, bias) * st.spread;
+        const b = Math.min(c + ringLen / 2, len);
+        const ta = clamp((b - ringLen) / len, 0, 1);
+        const tb = clamp(b / len, 0, 1);
         // rings taper toward the foot, except the last one: a chunky little boot
         const rw = i === RINGS - 1 ? width : width * (1 - 0.07 * i);
-        g.moveTo(hx + ux * a, hy + uy * a)
-          .lineTo(hx + ux * b, hy + uy * b)
+        g.moveTo(px(ta), py(ta))
+          .lineTo(px(tb), py(tb))
           .stroke({ width: rw, color: ringColor, cap: 'butt' });
       }
     }
@@ -157,8 +193,8 @@ export class RobotRenderer {
 
     this.legsFar.clear();
     this.legsNear.clear();
-    this.drawLegs(this.legsFar, R.legs.filter((l) => !l.near), COL.legFarCore, COL.legFar, 4.8);
-    this.drawLegs(this.legsNear, R.legs.filter((l) => l.near), COL.legNearCore, COL.legNear, 5.4);
+    this.drawLegs(this.legsFar, R.legs.filter((l) => !l.near), COL.legFarCore, COL.legFar, 4.8, dt);
+    this.drawLegs(this.legsNear, R.legs.filter((l) => l.near), COL.legNearCore, COL.legNear, 5.4, dt);
 
     if (R.face.dirty) {
       this.faceG.clear();

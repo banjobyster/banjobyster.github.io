@@ -370,6 +370,13 @@ export class Robot {
       for (const f of this.gait.feet) f.override = false;
       this.gait.update(dt, this.x, this.vel, s.y, this.facing, s.x1, s.x2);
 
+      // Step weight: each planting foot presses the body down a touch and the
+      // spring bounces it back, so strides read as carried weight, not glide.
+      if (this.gait.landed) {
+        const w = clamp(Math.abs(this.vel) / P.walkSpeed, 0.25, 1);
+        this.bodyYV += this.gait.landed * (12 + 24 * w) * P.scale;
+      }
+
       this.bobPhase += dt * (1.4 + Math.abs(this.vel) * 0.055);
       const bobAmp = (0.7 + Math.min(Math.abs(this.vel) * 0.009, 1.6)) * P.scale;
       const targetY =
@@ -410,6 +417,7 @@ export class Robot {
       const hip = { x: this.x + hl.x, y: this.bodyY + hl.y };
       const f = this.gait.feet[i];
       this.legs.push({
+        i,
         hip,
         foot: { x: f.x, y: f.y },
         near: i === 0 || i === 3,
