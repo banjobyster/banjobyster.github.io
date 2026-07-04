@@ -21,6 +21,9 @@ const CABLE_COLOR = {
   sarge: 0xe6ac45,
   byte: 0xea8058,
   winnow: 0x8fded0,
+  dot: 0x56d989,
+  nix: 0xea8058,
+  gus: 0xd9a13b,
 };
 
 function drawCables(gCable, { cast, store }) {

@@ -80,6 +80,22 @@
   z-index: 2;
 }
 
+/* The ops deck: a flat bay at the foot of the projects column holding the
+   backend/tooling devices. Its own height gives them room the tight card gaps
+   do not, and being flat (not wedged between two cards) it does not split the
+   card lattice. */
+.opsDeck {
+  height: 210px;
+}
+
+/* The footer scene: a band inside the contact section holding the platform
+   devices and their keeper, far enough below the last card to be its own
+   cluster. */
+.footerScene {
+  height: 190px;
+  margin-top: 40px;
+}
+
 /* Cards are terrain too: give the featured device faceplates a hair of relief
    so a byster reads as standing ON them, not floating. (Purely cosmetic; the
    data-walk rect is the card's border box either way.) */

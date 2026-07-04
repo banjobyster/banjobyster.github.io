@@ -67,16 +67,6 @@ export const FALLBACK = [
     order: 40,
   },
   {
-    title: "Digit Recognizer",
-    tagline: "Handwritten digit classifier",
-    description:
-      "A simple **neural** network built from scratch in C++ that recognizes handwritten digits.",
-    image: "DigitRecognizer.png",
-    link: "https://github.com/banjobyster/DigitRecognizer",
-    accent: "rgba(164, 131, 255, 0.9)",
-    order: 50,
-  },
-  {
     title: "Multiplayer Drawing & Chat",
     tagline: "Real-time drawing board with chat",
     description:
@@ -85,26 +75,6 @@ export const FALLBACK = [
     link: "https://multiplayerdrawingandchatwebsite.onrender.com/",
     accent: "rgba(255, 195, 131, 0.9)",
     order: 60,
-  },
-  {
-    title: "PathFinder Simulation",
-    tagline: "Visualise shortest paths in a grid",
-    description:
-      "A **web** based simulation made with Godot Engine to find the shortest path in a graph.",
-    image: "pathFinder.png",
-    link: "https://banjobyster.itch.io/pathfindersimulation",
-    accent: "rgba(172, 255, 47, 0.9)",
-    order: 70,
-  },
-  {
-    title: "ASCII Snake",
-    tagline: "The retro snake game in your console",
-    description:
-      "The **retro** snake game in ASCII, playable on the Windows console, made with C++.",
-    image: "asciiSnake.png",
-    link: "https://banjobyster.itch.io/ascii-snake-game",
-    accent: "rgba(230, 230, 250, 0.9)",
-    order: 80,
   },
   {
     title: "BlockForge VR",

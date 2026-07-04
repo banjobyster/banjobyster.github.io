@@ -9,9 +9,14 @@
 //             floor warden) chases Byte off in tiring bursts. Byte flees only a
 //             Sarge who is not winded, and slips through gaps Sarge cannot.
 //             Pip also notices the cursor and follows it, friendly.
-//
-// More regions are appended as their terrain is built (featured cards, the
-// middle band, the footer).
+//   PROJECTS  Winnow drifts the real project cards, shying from the cursor. On
+//             the shelves woven between the cards, Nix (a gremlin) fails the CI
+//             pipeline, drains the datastore and jams the queue, while Dot (an
+//             operator) chases behind restoring each one. Three separate scenes
+//             stay put because their terrain clusters sit past jump range.
+//   FOOTER    Gus keeps the platform bay: a container, a deploy rocket and a
+//             monitor. He tends them, but his own tinkering sometimes knocks one
+//             out, so he has to go set it right again. He is shy of the cursor.
 
 import { LAUNCH, LAUNCH_AGILE, behaviors } from "@banjobyster/bysters";
 import { CRT_TODDLER } from "./characters/crt-toddler.js";
@@ -22,7 +27,7 @@ import { WINNOW } from "./characters/winnow.js";
 const {
   operateFixtures, followCursor, wander, watchCursor, watchNearest,
   approach, flee, caughtBy, reactTo, perch, fatigue, fleeCursor,
-  avoidCursorGaze, liveliness, mood, flourish,
+  avoidCursorGaze, sometimes, liveliness, mood, flourish,
 } = behaviors;
 
 // Scene-wide cruise derate so nobody blurs across the screen.
@@ -32,6 +37,31 @@ export const DERATE = 0.72;
 const SARGE_CAPS = { maxLaunch: 770, gravity: 2400 };
 // Low gravity: big, slow, floaty leaps. Winnow drifts the cards on these.
 const MOON = { maxLaunch: 900, gravity: 780 };
+
+// The devices each operator/gremlin tends, with their healthy + degraded state
+// names. states[0] is healthy, states[1] is degraded (the actuators.css
+// convention), so a fixer drives toward `ok` and a gremlin toward `bad`.
+const PROJECT_DEVICES = [
+  { type: "ci-pipeline", ok: "running", bad: "failed" },
+  { type: "database", ok: "synced", bad: "draining" },
+  { type: "message-queue", ok: "flowing", bad: "backed-up" },
+];
+const FOOTER_DEVICES = [
+  { type: "container", ok: "running", bad: "stopped" },
+  { type: "deploy-rocket", ok: "shipped", bad: "held" },
+  { type: "monitor", ok: "nominal", bad: "alert" },
+];
+// One operateFixtures per device type: an operator only bids on a device that
+// is actually degraded, so with several down it heals them one at a time (the
+// arbiter's incumbency keeps it on one until done). Mirror it for the gremlin.
+const fixBehaviors = (devices, face) =>
+  devices.map((d) =>
+    operateFixtures({ match: (fx) => fx.type === d.type && fx.state === d.bad, drive: d.ok, face }),
+  );
+const breakBehaviors = (devices, face) =>
+  devices.map((d) =>
+    operateFixtures({ match: (fx) => fx.type === d.type && fx.state === d.ok, drive: d.bad, face }),
+  );
 
 export const CAST = [
   // ---- HERO: the rivalry over the server rack ----
@@ -115,6 +145,57 @@ export const CAST = [
       wander(),
       flourish(["peek", "dream"], { every: 5 }),
       liveliness({ base: DERATE, vary: 0.26, every: 4.4 }),
+      mood("idle"),
+    ],
+  },
+  {
+    name: "dot",
+    character: CRT_TODDLER,
+    caps: LAUNCH,
+    speedScale: DERATE,
+    spawnAt: "#ops-floor",
+    behaviors: [
+      ...fixBehaviors(PROJECT_DEVICES, "happy"),
+      followCursor({ face: "happy" }),
+      perch({ every: 13, dwell: 3, face: "idle", priority: 45 }),
+      wander(),
+      watchCursor(),
+      liveliness({ base: DERATE, vary: 0.18, every: 3.2 }),
+      mood("idle"),
+    ],
+  },
+  {
+    name: "nix",
+    character: GLITCH_IMP,
+    caps: LAUNCH_AGILE,
+    speedScale: DERATE,
+    spawnAt: "#ops-floor",
+    behaviors: [
+      ...breakBehaviors(PROJECT_DEVICES, "mischief"),
+      perch({ every: 11, dwell: 2.5, face: "mischief", priority: 40 }),
+      wander(),
+      watchNearest(),
+      liveliness({ base: DERATE, vary: 0.4, every: 1.4 }),
+      mood("mischief"),
+    ],
+  },
+
+  // ---- FOOTER: Gus keeps the platform bay ----
+  {
+    name: "gus",
+    character: SARGE,
+    caps: SARGE_CAPS,
+    speedScale: DERATE,
+    spawnAt: "#footer-floor",
+    behaviors: [
+      ...fixBehaviors(FOOTER_DEVICES, "content"),
+      // his own tinkering occasionally knocks one out, and then he fixes it
+      ...breakBehaviors(FOOTER_DEVICES, "alert").map((b) => sometimes(b, 0.22, { window: 6 })),
+      fleeCursor({ radius: 150, face: "sleepy", speed: 1.3 }),
+      perch({ every: 10, dwell: 4, face: "content", priority: 45 }),
+      wander(),
+      watchCursor(),
+      liveliness({ base: DERATE, vary: 0.12, every: 3.8 }),
       mood("idle"),
     ],
   },

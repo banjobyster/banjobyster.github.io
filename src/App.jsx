@@ -33,7 +33,19 @@ function App() {
 
   return (
     <div id="page">
-      <ThemeToggle />
+      <div className="topNav">
+        <a
+          className="navLink mono"
+          href="https://banjobyster.github.io/bysters/"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="bysters: the open-source framework these creatures run on"
+        >
+          BYSTERS
+          <span className="navArrow" aria-hidden="true">↗</span>
+        </a>
+        <ThemeToggle />
+      </div>
       <Cable />
       <BystersOverlay dataReady={state === "ready"} />
 
@@ -102,6 +114,34 @@ function App() {
           {featured.map((p, i) => (
             <ProjectCard key={p.id ?? p.title} {...p} index={i} />
           ))}
+
+          {/* The ops deck closes the projects: a flat bay where Dot keeps the
+              build pipeline, datastore and message queue running while Nix slips
+              in to break them. It sits at the foot of the card lattice, so its
+              tenders can climb up onto the cards and back down. */}
+          <div className="opsDeck region" aria-hidden="true">
+            <div
+              className="floor"
+              id="ops-floor"
+              data-walk
+              style={{ left: "4%", right: "4%", bottom: 18 }}
+            />
+            <div
+              className="ledge"
+              id="ops-ledge"
+              data-walk
+              style={{ right: "9%", width: 120, bottom: 104 }}
+            />
+            <div className="act-mount" style={{ left: "8%", bottom: 30 }}>
+              <Actuator type="ci-pipeline" id="proj-ci" />
+            </div>
+            <div className="act-mount" style={{ left: "41%", bottom: 30 }}>
+              <Actuator type="database" id="proj-db" />
+            </div>
+            <div className="act-mount" style={{ left: "67%", bottom: 30 }}>
+              <Actuator type="message-queue" id="proj-mq" />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -166,7 +206,7 @@ function App() {
         </div>
       </section>
 
-      <footer className="section" id="contact">
+      <footer className="section region" id="contact">
         <h2 className="sectionHead">
           <span className="headIndex mono">04</span>
           Contact
@@ -185,6 +225,34 @@ function App() {
             </a>
           </div>
         </div>
+
+        {/* The bottom scene: a keeper (Gus) tends the platform bay: a container,
+            a deploy rocket and a live monitor. Far enough below the last card to
+            be its own cluster. */}
+        <div className="footerScene region" aria-hidden="true">
+          <div
+            className="floor"
+            id="footer-floor"
+            data-walk
+            style={{ left: "5%", right: "5%", bottom: 16 }}
+          />
+          <div
+            className="ledge"
+            id="footer-ledge"
+            data-walk
+            style={{ left: "8%", width: 110, bottom: 96 }}
+          />
+          <div className="act-mount" style={{ left: "30%", bottom: 28 }}>
+            <Actuator type="container" id="foot-container" />
+          </div>
+          <div className="act-mount" style={{ left: "50%", bottom: 28 }}>
+            <Actuator type="deploy-rocket" id="foot-rocket" />
+          </div>
+          <div className="act-mount" style={{ left: "68%", bottom: 28 }}>
+            <Actuator type="monitor" id="foot-monitor" />
+          </div>
+        </div>
+
         <div className="footerBar">
           <span className="cableEndSocket" id="cableEnd" aria-hidden="true" />
           <span className="mono">© 2026 SAYAN BAKSHI</span>
