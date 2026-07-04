@@ -40,18 +40,31 @@ const COL = {
 
 const PARAMS = {
   scale: 1.4, // multiplier for the authored motion offsets in gait/maneuvers
-  bodyW: 25, // chest
-  bodyH: 15,
-  headW: 62, // the monitor
-  headH: 48,
+  bodyW: 26, // chest
+  bodyH: 16,
+  headW: 70, // the monitor: bigger and top-heavy, so it reads as the larger bot
+  headH: 56,
+  // Stance geometry (hipX/footRestX/standH) is the terrain-critical part and is
+  // deliberately unchanged: the hero stays a ~26px-wide stander so the verified
+  // level design (SPEC 4.2c) still holds. The heft comes from head size, slower
+  // tuning, softer springs, and head inertia, not a wider footprint.
   hipX: [10, 5.5, -5.5, -10],
   hipY: 7,
   footRestX: [13, 7, -7, -13],
   standH: 22,
-  stepThresholdBase: 12,
-  walkSpeed: 200,
-  wanderSpeed: 115,
-  accel: 950,
+  stepThresholdBase: 14, // longer, more deliberate strides
+  walkSpeed: 165, // slower than the imp (250+): a heavier walker
+  wanderSpeed: 95,
+  accel: 720, // ponderous to start and stop
+  // Heft: softer body/rot springs settle with more weight; a strong head mass
+  // makes the big monitor lag back on starts and pitch forward on hard stops.
+  bodySpring: 165,
+  bodyDamp: 21,
+  rotSpring: 140,
+  rotDamp: 23,
+  leanGain: 0.00034,
+  leanMax: 0.052,
+  headMass: 1.15,
 };
 
 const FACES = {

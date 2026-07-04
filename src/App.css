@@ -535,6 +535,116 @@ button.benchItem:hover {
   animation: blink 0.5s steps(2, start) infinite;
 }
 
+/* ---- sabotage damage on the pipeline (Part 4) ----
+   When red jams the live stage, the box itself takes the damage: no floating
+   badge. Only inner elements recolor/overlay; the .benchItem terrain rect is
+   never transformed (SPEC 4.2c). data-state is present on the live box only. */
+
+/* the fault the villain sticks onto a jammed box, pried off while the hero
+   works it (busy) */
+.benchFault {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 13px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid #2a0f0d;
+  background: linear-gradient(
+    135deg,
+    var(--led-err) 0 42%,
+    #2a0f0d 42% 58%,
+    var(--led-err) 58% 100%
+  );
+  opacity: 0;
+  transform: scale(0.3) rotate(-14deg);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.benchItem[data-state="broken"] .benchFault {
+  opacity: 1;
+  transform: scale(1) rotate(-14deg);
+  animation: faultJitter 0.16s steps(2) infinite;
+}
+
+.benchItem[data-state="busy"] .benchFault {
+  opacity: 0.85;
+  transform: scale(0.92) rotate(-6deg);
+  filter: grayscale(0.5) brightness(0.8);
+}
+
+@keyframes faultJitter {
+  50% {
+    transform: scale(1) rotate(-14deg) translate(-1px, 1px);
+  }
+}
+
+/* build stage jammed: grille and LED short to red, panel bruises */
+.crate[data-state="broken"] {
+  background: color-mix(in srgb, var(--led-err) 12%, var(--panel-2));
+}
+
+.crate[data-state="broken"] .crateGrille {
+  background: repeating-linear-gradient(
+    to right,
+    var(--led-err) 0 3px,
+    transparent 3px 8px
+  );
+}
+
+.crate[data-state="broken"] .benchLed {
+  background: var(--led-err);
+  animation: blink 0.18s steps(2, start) infinite;
+}
+
+/* test stage jammed: the scope screen dies to red static */
+.scope[data-state="broken"] .scopeScreen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 70, 58, 0.2) 0 2px,
+      transparent 2px 4px
+    ),
+    rgba(120, 18, 16, 0.3);
+  mix-blend-mode: screen;
+  animation: stationStatic 0.16s steps(2, end) infinite;
+}
+
+.scope[data-state="broken"] .scopeStatus {
+  color: var(--led-err);
+  z-index: 4;
+}
+
+/* while the hero pries the fault off (busy), an amber work scan sweeps */
+.scope[data-state="busy"] .scopeScreen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--led-warn) 30%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 100% 200%;
+  animation: stationScan 1.1s linear infinite;
+}
+
+/* ship stage jammed: the rack slots flatline red */
+.tower[data-state="broken"] .towerSlot.lit i {
+  box-shadow: none;
+  animation: blink 0.18s steps(2, start) infinite;
+}
+
 .scrollCue {
   margin-top: auto;
   margin-bottom: 30px;
@@ -1270,6 +1380,132 @@ button.benchItem:hover {
   background: var(--led-warn);
 }
 
+/* A broken featured-card station "dies": its screen drops to red static. The
+   overlay lives on .screenGlass (which is overflow:hidden and inset), so it is
+   clipped to the screen and never changes the card's terrain rect. */
+.device[data-state="broken"] .screenGlass img {
+  filter: brightness(0.32) saturate(0.4) hue-rotate(-18deg);
+}
+
+.device[data-state="broken"] .screenGlass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 70, 58, 0.18) 0 2px,
+      transparent 2px 4px
+    ),
+    rgba(120, 18, 16, 0.28);
+  mix-blend-mode: screen;
+  animation: stationStatic 0.16s steps(2, end) infinite;
+}
+
+.device[data-state="busy"] .screenGlass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--led-warn) 30%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 100% 200%;
+  animation: stationScan 1.1s linear infinite;
+}
+
+@keyframes stationStatic {
+  50% {
+    opacity: 0.55;
+    transform: translateY(1px);
+  }
+}
+
+@keyframes stationScan {
+  0% {
+    background-position: 0 -100%;
+  }
+  100% {
+    background-position: 0 100%;
+  }
+}
+
+/* A corrupted service glitches across the whole faceplate, not just the screen:
+   the title tears into a chromatic split, tagline and body dim, tags flicker
+   dead red. Only inner elements transform; the .device terrain rect never
+   moves (SPEC 4.2c). */
+.device[data-state="broken"] .deviceTitle {
+  color: var(--led-err);
+  text-shadow:
+    1.4px 0 rgba(91, 159, 227, 0.85),
+    -1.4px 0 rgba(255, 70, 58, 0.85);
+  animation: svcTitleGlitch 0.9s steps(6, end) infinite;
+}
+
+.device[data-state="broken"] .deviceTagline,
+.device[data-state="broken"] .deviceDesc {
+  opacity: 0.5;
+}
+
+.device[data-state="broken"] .deviceTags li {
+  border-color: var(--led-err);
+  color: var(--led-err);
+  animation: svcTagFlicker 0.5s steps(2, end) infinite;
+}
+
+.device[data-state="broken"] .deviceTags li:nth-child(2) {
+  animation-delay: 0.13s;
+}
+
+.device[data-state="broken"] .deviceTags li:nth-child(3) {
+  animation-delay: 0.29s;
+}
+
+@keyframes svcTitleGlitch {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-1.5px);
+  }
+  40% {
+    transform: translateX(1.5px);
+  }
+  60% {
+    transform: translateX(-0.5px);
+  }
+  80% {
+    transform: translateX(1px);
+  }
+}
+
+@keyframes svcTagFlicker {
+  50% {
+    opacity: 0.32;
+  }
+}
+
+/* Being restored (the hero working it, busy): the corruption settles to amber
+   while the signal comes back. */
+.device[data-state="busy"] .deviceTitle {
+  color: var(--led-warn);
+  text-shadow: none;
+  animation: none;
+}
+
+.device[data-state="busy"] .deviceTags li {
+  border-color: var(--led-warn);
+  color: var(--led-warn);
+  animation: none;
+}
+
 /* ---------------- reduced motion ---------------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1313,5 +1549,28 @@ button.benchItem:hover {
   [data-station][data-state="busy"] {
     animation: none;
     box-shadow: 0 0 0 1px var(--led-warn);
+  }
+
+  .device[data-state="broken"] .screenGlass::before,
+  .device[data-state="busy"] .screenGlass::before {
+    animation: none;
+  }
+
+  .benchItem[data-state="broken"] .benchFault {
+    animation: none;
+  }
+
+  .scope[data-state="broken"] .scopeScreen::before,
+  .scope[data-state="busy"] .scopeScreen::before {
+    animation: none;
+  }
+
+  .device[data-state="broken"] .deviceTitle {
+    animation: none;
+    transform: none;
+  }
+
+  .device[data-state="broken"] .deviceTags li {
+    animation: none;
   }
 }

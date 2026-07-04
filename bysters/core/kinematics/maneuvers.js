@@ -12,7 +12,7 @@ import {
   easeOutBack,
   randRange,
   rot2d,
-} from './math.js';
+} from '../math.js';
 
 const TUCK = [
   { x: 9, y: 5 },

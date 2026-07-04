@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { mountRobot } from "../robot/facade.js";
+import { stationStore } from "../stations/store.js";
 
 // Mounts the robot overlay. Purely additive: under prefers-reduced-motion or
 // missing WebGL no canvas is created at all, and the DOM site is complete
@@ -28,7 +29,7 @@ export default function RobotOverlay({ fetchState, repoCount, featuredCount }) {
     const start = () => {
       if (!alive || handle || mounting || mq.matches || !webglAvailable()) return;
       mounting = true;
-      mountRobot({ getPageState: () => pageRef.current })
+      mountRobot({ getPageState: () => pageRef.current, stations: stationStore })
         .then((h) => {
           mounting = false;
           if (!alive || mq.matches) h.unmount();

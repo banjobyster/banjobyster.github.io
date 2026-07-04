@@ -4,7 +4,7 @@
 // cable survives reflow for free.
 
 import { Graphics } from 'pixi.js';
-import { clamp, qbez, randRange } from './engine/math.js';
+import { clamp, qbez, randRange } from 'bysters/core/math.js';
 
 export class Effects {
   constructor(robot) {
@@ -41,15 +41,21 @@ export class Effects {
     }
   }
 
-  update(dt) {
+  // space: the current Space snapshot (TDD Section 5). The plug target is a
+  // live DOM element; rectOf gives its document-space rect so the cable draws
+  // in the robot's coordinates without reading window.
+  update(dt, space) {
     const R = this.R;
 
     const u = this.under;
     u.clear();
-    if (this.plug && this.plug.el && this.plug.el.isConnected) {
-      const r = this.plug.el.getBoundingClientRect();
-      const px = r.left + r.width / 2 + window.scrollX;
-      const py = r.top + r.height / 2 + window.scrollY;
+    const plugRect =
+      this.plug && this.plug.el && this.plug.el.isConnected && space
+        ? space.rectOf(this.plug.el)
+        : null;
+    if (plugRect) {
+      const px = plugRect.x + plugRect.w / 2;
+      const py = plugRect.y + plugRect.h / 2;
       const cx = R.x;
       const cy = R.bodyY + 3;
       const mx = (cx + px) / 2;

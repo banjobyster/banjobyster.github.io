@@ -8,9 +8,9 @@
 // comes first. The job claims the slot while walking and working so nothing
 // ambient fights it.
 
-import { clamp } from '../engine/math.js';
-import { planRoute } from '../engine/terrain.js';
-import { findStations, setStation } from './util.js';
+import { clamp } from 'bysters/core/math.js';
+import { planRoute } from 'bysters/core/path/terrain.js';
+import { findStations, cssColorToInt, accentPalette } from './util.js';
 
 export function repair() {
   return {
@@ -24,30 +24,36 @@ export function repair() {
       this.cool = 0;
     },
 
-    // Drop the current job and leave the station in a sane state. Called when
-    // the target vanishes mid-repair (scrolled away, terrain gone).
-    abort(setBusyBackToBroken) {
-      if (setBusyBackToBroken && this.target) setStation(this.target.name, 'broken');
+    // Drop the current job. If we had already flagged the station busy, hand it
+    // back as broken so it does not get stuck mid-repair and someone finishes
+    // the job later.
+    abort(api, revertBusy) {
+      if (revertBusy && this.target) api.setStation(this.target.name, 'broken');
       this.phase = 'none';
       this.target = null;
     },
 
     update(ctx) {
-      const { d, R, api } = ctx;
+      const { d, R, api, rd } = ctx;
       this.cool = Math.max(0, this.cool - ctx.dt);
       if (ctx.owner) {
         // A higher job (catch-up walking back into view) took over; a walk in
         // progress was cancelled, so relinquish and retry once free.
-        if (this.phase === 'walk') this.abort(false);
+        if (this.phase === 'walk') this.abort(api, false);
         return false;
       }
 
       if (this.phase === 'fix') {
+        // If the station vanished mid-fix, drop it (nothing to flag).
+        if (!this.target.el.isConnected || api.segFor(this.target.el) < 0) {
+          this.abort(api, false);
+          return false;
+        }
         R.sleepTimer = Math.max(R.sleepTimer, 6);
         R.facing = R.x <= this.stationX ? 1 : -1; // face the station
         this.fixT -= ctx.dt;
         if (this.fixT <= 0) {
-          setStation(this.target.name, 'ok');
+          api.setStation(this.target.name, 'ok');
           R.face.set('excited', 1.6);
           R.bodyYV -= 110 * R.P.scale;
           d.note(`repair: fixed ${this.target.name}`);
@@ -59,9 +65,8 @@ export function repair() {
       }
 
       if (this.phase === 'walk') {
-        // The target got fixed by nothing else here, but it could have been
-        // scrolled offscreen or its element removed; bail cleanly.
-        if (!this.target.el.isConnected || api.segFor(this.target.el) < 0) this.abort(false);
+        // Target scrolled offscreen or its element removed before arrival.
+        if (!this.target.el.isConnected || api.segFor(this.target.el) < 0) this.abort(api, false);
         return this.phase !== 'none';
       }
 
@@ -79,7 +84,7 @@ export function repair() {
       );
       let pick = null;
       for (const st of broken) {
-        if (planRoute(api.graph(), from, { seg: st.seg, x: (st.s.x1 + st.s.x2) / 2 })) {
+        if (planRoute(api.graph(), from, { seg: st.seg, x: (st.s.x1 + st.s.x2) / 2 }, R.caps)) {
           pick = st;
           break;
         }
@@ -90,6 +95,7 @@ export function repair() {
       this.target = { name: pick.name, el: pick.el, seg: pick.seg };
       this.stationX = (pick.s.x1 + pick.s.x2) / 2;
       this.phase = 'walk';
+      R.face.set('curious', 0.8); // spots the fault, heads over
       d.note(`repair: walking to ${pick.name}`);
       R.commandGotoSeg(pick.seg, clamp(this.stationX, pick.s.x1 + 4, pick.s.x2 - 4), {
         noise: 0.12,
@@ -99,21 +105,29 @@ export function repair() {
           if (this.phase !== 'walk' || !this.target) return;
           this.phase = 'fix';
           this.fixT = 1.5;
-          setStation(this.target.name, 'busy');
+          api.setStation(this.target.name, 'busy');
           R.face.set('sync');
+          // Restoring a service: take on its accent while working it, so the
+          // fix reads as the hero re-flashing THAT device's signal.
+          const el = this.target.el;
+          if (el.dataset.terrain === 'card') {
+            const accent = cssColorToInt(getComputedStyle(el).getPropertyValue('--accent'), 0x3ddc97);
+            rd.setFacePalette(accentPalette(accent), 2.6);
+            R.face.dirty = true;
+          }
           d.note(`repair: working ${this.target.name}`);
         },
         onFail: () => {
-          this.abort(false);
+          this.abort(api, false);
           this.cool = 1.5;
         },
       });
       return true;
     },
 
-    onTerrainRebuilt() {
+    onTerrainRebuilt(ctx) {
       // The rebind cancelled any in-flight route; re-issue from the new graph.
-      if (this.phase === 'walk') this.abort(false);
+      if (this.phase === 'walk') this.abort(ctx.api, false);
     },
   };
 }

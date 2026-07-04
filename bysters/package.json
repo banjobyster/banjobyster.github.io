@@ -1,0 +1,18 @@
+{
+  "name": "bysters",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Bring a web page to life with bysters: small procedurally-animated creatures that treat the DOM as physical terrain.",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./pixi": "./render/pixi/overlay.js",
+    "./dom": "./dom/space.js",
+    "./core": "./core/robot.js"
+  },
+  "sideEffects": false,
+  "peerDependencies": {
+    "pixi.js": "^8.0.0"
+  }
+}

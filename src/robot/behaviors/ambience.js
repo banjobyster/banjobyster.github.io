@@ -2,8 +2,8 @@
 // behavior each. High noise, low priority: any purposeful job outranks them,
 // and each one runs only while its section owns the mid-viewport band.
 
-import { makeWave } from '../engine/maneuvers.js';
-import { randRange, choose } from '../engine/math.js';
+import { makeWave } from 'bysters/core/kinematics/maneuvers.js';
+import { randRange, choose } from 'bysters/core/math.js';
 
 // Hero: idle-follow the cursor, wander the visible platforms.
 export function heroAmbience() {

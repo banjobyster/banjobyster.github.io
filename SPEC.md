@@ -228,6 +228,30 @@ is reachable from the viewport-bottom ground at every scroll position.
 - Cursor interplay everywhere: startle-dodge if the cursor rushes it, cautious approach
   if the cursor sits still near it.
 
+### 4.4b The rivalry as one fiction (Part 4, STATUS 2026-07-04, owner-directed)
+
+The cast's sabotage/repair game is no longer a cosmetic layer over generic boxes;
+it IS the page's live systems, and the two robots are genuinely different movers.
+Owner note: the old model "felt soulless: red destroyed random divs and the div
+threw smoke with an alert emoticon." The rework, per owner sign-off:
+
+- Every station is a real running system. On the hero the **deploy pipeline**
+  (`Bench.jsx`) fails ONLY because red jams the live stage (the blind random
+  failure is gone), and it recovers ONLY when blue repairs it; an auto-run keeps
+  it alive and an auto-rollback backstops an un-repaired jam. Every **featured
+  card** is a live `svc-N` service red corrupts (whole-faceplate glitch) and blue
+  restores (with the card's accent echoed on its face).
+- Diegetic damage only: the floating warning-triangle + smoke badge is gone.
+  A broken box shows the damage on itself (dead screen, red LEDs, chromatic
+  title, a stuck fault chip) plus small electrical sparks off the canvas.
+- Movement asymmetry: a **heavy hero** (bigger head, slower, softer springs,
+  strong head inertia) vs a **nimble imp** (small, fast, stiff, near-zero head
+  inertia). The imp plans with per-character caps up to `NAV_AGILE`, so it takes
+  hops/climbs/drops the hero's base-`NAV` planner rejects and flees to the side
+  away from the hero (not a fixed downward drain). Base NAV connectivity for the
+  hero is unchanged and re-verified. See `src/robot/README.md` for the as-built
+  contract (per-character caps, head inertia, the pipeline coupling).
+
 ### 4.5 Mobile (touch) profile
 
 - No cursor sensors. Inputs: scroll velocity, taps on the robot, section changes.
@@ -235,6 +259,11 @@ is reachable from the viewport-bottom ground at every scroll position.
 
 ## 5. Architecture
 
+- Implementation map: see `src/robot/README.md` for the full engine / characters /
+  behaviors / facade layering, the behavior contract and priority ladders, the
+  character contract, the auto-terrain + ghost-rect rules, the multi-robot API,
+  the task-station store, the emote system, and the hard constraints. This section
+  is the intent; that README is the as-built reference.
 - React DOM app (existing stack, React 19 + Vite 7) renders the fallback site.
 - One `<RobotOverlay>` component mounts a full-page transparent PixiJS 8 canvas,
   `position: fixed; inset: 0; pointer-events: none; z-index` above content.

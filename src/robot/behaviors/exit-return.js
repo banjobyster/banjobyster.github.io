@@ -11,8 +11,8 @@
 // possible; if it cannot find a far platform it releases and lets catch-up do
 // the plain re-entry.
 
-import { clamp } from '../engine/math.js';
-import { planRoute } from '../engine/terrain.js';
+import { clamp } from 'bysters/core/math.js';
+import { planRoute } from 'bysters/core/path/terrain.js';
 import { offscreenTarget, nearestOther } from './util.js';
 
 export function exitReturn(mind) {
@@ -46,10 +46,12 @@ export function exitReturn(mind) {
         mind.wantsExit = false;
         if (this.offscreen(ctx)) {
           this.phase = 'out';
-          this.timer = 10 + Math.random() * 15;
+          this.timer = 8 + Math.random() * 8;
           return true;
         }
-        const off = offscreenTarget(api, R, 'below', planRoute);
+        const off = offscreenTarget(api, R, 'below', planRoute, {
+          hero: nearestOther(api, R)?.robot,
+        });
         if (!off) return false; // nowhere to slink to; stay put
         this.phase = 'leaving';
         this.arrived = false;
@@ -71,7 +73,7 @@ export function exitReturn(mind) {
       if (this.phase === 'leaving') {
         if ((this.arrived || R.state === 'idle') && this.offscreen(ctx)) {
           this.phase = 'out';
-          this.timer = 10 + Math.random() * 15;
+          this.timer = 8 + Math.random() * 8;
         } else if (this.arrived && !this.offscreen(ctx)) {
           this.phase = 'idle'; // ended up on screen after all; give up the exit
         }
@@ -99,8 +101,7 @@ export function exitReturn(mind) {
       if (R.mode === 'ground' && this.reissue <= 0 && R.state !== 'goto') {
         this.reissue = 0.6;
         const g = api.graph();
-        const sy = window.scrollY;
-        const vh = window.innerHeight;
+        const { scrollY: sy, viewportH: vh } = api.space();
         const hero = nearestOther(api, R);
         const heroX = hero ? hero.robot.x : R.x;
         const from = { seg: R.seg, x: R.x };
@@ -116,7 +117,7 @@ export function exitReturn(mind) {
         let picked = false;
         for (const s of onScreen) {
           const x = (s.x1 + s.x2) / 2;
-          if (planRoute(g, from, { seg: s.id, x })) {
+          if (planRoute(g, from, { seg: s.id, x }, R.caps)) {
             d.note('return: coming back into view');
             R.commandGotoSeg(s.id, clamp(x, s.x1 + 4, s.x2 - 4), {
               noise: 0.2,

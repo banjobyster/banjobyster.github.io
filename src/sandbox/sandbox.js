@@ -2,10 +2,10 @@
 // and a small control panel for the motion-quality review.
 
 import { Container, Graphics } from 'pixi.js';
-import { createOverlay } from '../robot/engine/overlay.js';
-import { compileTerrain } from '../robot/engine/terrain.js';
-import { Robot } from '../robot/engine/robot.js';
-import { RobotRenderer } from '../robot/engine/renderer.js';
+import { createOverlay } from 'bysters/render/pixi/overlay.js';
+import { compileTerrain } from 'bysters/core/path/terrain.js';
+import { Robot } from 'bysters/core/robot.js';
+import { RobotRenderer } from 'bysters/render/pixi/robot-renderer.js';
 import { CRT_TODDLER } from '../robot/characters/crt-toddler.js';
 import './sandbox.css';
 

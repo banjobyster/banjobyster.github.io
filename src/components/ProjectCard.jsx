@@ -7,9 +7,11 @@ import { useStation } from "./stations";
 // the screen brightens, tags tint. The card is robot terrain; hover effects
 // never move its rect.
 //
-// The first featured card doubles as a task station ("rig"): the villain can
-// short its LED strip out (broken) and the hero resets it. Only card zero
-// carries the station so the featured section has exactly one, per Part 3c.
+// Every featured card is also a live service task station ("svc-N"): the
+// villain corrupts one (broken -> the whole faceplate glitches, screen dies to
+// static) and the hero restores it (busy -> ok). Red goes for whichever card is
+// on screen; blue defends them. With no robot overlay there is no villain, so
+// every service stays online.
 export default function ProjectCard({
   title,
   tagline,
@@ -21,14 +23,14 @@ export default function ProjectCard({
   index = 0,
 }) {
   const unit = String(index + 1).padStart(2, "0");
-  const isStation = index === 0;
-  const stationState = useStation(isStation ? "rig" : null);
+  const station = `svc-${index}`;
+  const stationState = useStation(station);
   return (
     <article
       className="device"
       data-terrain="card"
-      data-station={isStation ? "rig" : undefined}
-      data-state={isStation ? stationState : undefined}
+      data-station={station}
+      data-state={stationState}
       style={{ "--accent": accent }}
     >
       <a

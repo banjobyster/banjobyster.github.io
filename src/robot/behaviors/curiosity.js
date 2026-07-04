@@ -3,7 +3,7 @@
 // so this one skips that section. Never claims the slot: the creep is a
 // quiet one-shot with a long cooldown.
 
-import { randRange } from '../engine/math.js';
+import { randRange } from 'bysters/core/math.js';
 
 export function curiosity() {
   return {

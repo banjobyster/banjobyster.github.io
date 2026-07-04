@@ -33,7 +33,8 @@ import { curiosity } from './curiosity.js';
 import { flee } from './flee.js';
 import { exitReturn } from './exit-return.js';
 import { sabotage } from './sabotage.js';
-import { randRange, choose } from '../engine/math.js';
+import { nearestOther } from './util.js';
+import { randRange, choose } from 'bysters/core/math.js';
 import {
   heroAmbience,
   featuredAmbience,
@@ -68,22 +69,43 @@ export function ambientBehaviors() {
   return [catchUp(), reactions(), curiosity(), heroAmbience(), featuredAmbience(), moreAmbience()];
 }
 
-// A light idle skitter for the villain between its errands, so it is not
-// frozen in place while waiting out a cooldown. Low priority: any villain job
-// (flee, exit, sabotage) outranks it.
-function villainRoam() {
+// The villain's between-errands life: it never just stands there. It paces the
+// visible platforms and, in between, eyes a station or shoots the hero a wary,
+// scheming glance. Low priority: any real villain job (flee, exit, sabotage)
+// outranks it.
+function villainProwl() {
   return {
-    name: 'villain-roam',
+    name: 'villain-prowl',
     priority: 10,
     init() {
-      this.timer = randRange(2, 4);
+      this.pace = randRange(1.5, 3);
+      this.glance = randRange(1.5, 3);
     },
     update(ctx) {
-      const { R, api, sensors: s } = ctx;
+      const { d, R, api, sensors: s } = ctx;
       if (ctx.owner) return false;
-      this.timer -= ctx.dt;
-      if (this.timer <= 0 && R.state === 'idle' && R.mode === 'ground') {
-        this.timer = randRange(4, 8);
+
+      // Scheming glances: eye the hero if it is around, otherwise size up a
+      // still-working station. Cheap micro-life so it never reads as frozen.
+      this.glance -= ctx.dt;
+      if (this.glance <= 0 && R.mode === 'ground' && R.state !== 'goto') {
+        this.glance = randRange(2, 3.8);
+        const hero = nearestOther(api, R);
+        const stations = [...document.querySelectorAll('[data-station]')].filter(
+          (el) => el.isConnected && api.stationState(el.dataset.station) === 'ok',
+        );
+        if (hero && hero.dist < 520 && Math.random() < 0.5) {
+          d.lookAt(hero.robot.x, hero.robot.bodyY, 1.1);
+        } else if (stations.length) {
+          const el = choose(stations);
+          const rw = api.space().rectOf(el);
+          d.lookAt(rw.x + rw.w / 2, rw.y, 1.1);
+        }
+      }
+
+      this.pace -= ctx.dt;
+      if (this.pace <= 0 && R.state === 'idle' && R.mode === 'ground') {
+        this.pace = randRange(2.2, 4);
         const g = api.graph();
         const cand = g.segments.filter(
           (seg) =>
@@ -96,9 +118,9 @@ function villainRoam() {
         if (cand.length) {
           const seg = choose(cand);
           R.commandGotoSeg(seg.id, randRange(seg.x1 + 8, seg.x2 - 8), {
-            noise: 0.8,
+            noise: 0.7,
             quiet: true,
-            speed: R.P.wanderSpeed * 1.3,
+            speed: R.P.wanderSpeed * 1.15,
           });
         }
       }
@@ -111,5 +133,5 @@ function villainRoam() {
 // can hand the exit beat to exit-return. No boot / hover / pipeline / repair.
 export function villainBehaviors() {
   const mind = { wantsExit: false };
-  return [flee(mind), exitReturn(mind), catchUp(), sabotage(mind), reactions(), villainRoam()];
+  return [flee(), exitReturn(mind), catchUp(), sabotage(mind), reactions(), villainProwl()];
 }

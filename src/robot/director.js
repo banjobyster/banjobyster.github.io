@@ -10,7 +10,7 @@
 // issuing movement. The default ladder lives in behaviors/index.js:
 // boot > hover-card > catch-up > pipeline > reactions > curiosity > ambience.
 
-import { randRange, choose } from './engine/math.js';
+import { randRange, choose } from 'bysters/core/math.js';
 
 const SECTIONS = [
   ['hero', 'header.hero'],
@@ -84,9 +84,8 @@ export class Director {
   inSection(name, docY) {
     const entry = this.sectionEls.find(([n]) => n === name);
     if (!entry) return false;
-    const r = entry[1].getBoundingClientRect();
-    const top = r.top + window.scrollY;
-    return docY >= top && docY < top + r.height;
+    const r = this.api.space().rectOf(entry[1]);
+    return docY >= r.y && docY < r.y + r.h;
   }
 
   // ---------------- frame loop ----------------
@@ -136,7 +135,7 @@ export class Director {
     // big inter-section margins never leave the robot without a job.
     let cur = null;
     for (const [name, el] of this.sectionEls) {
-      const top = el.getBoundingClientRect().top + window.scrollY;
+      const top = s.space.rectOf(el).y;
       if (mid >= top - 60) cur = name;
     }
     // The footer is shorter than half a viewport, so mid-view can never

@@ -1,11 +1,11 @@
 // The robot: body state, FSM, sensors, and locomotion. Pure logic; the
 // renderer reads the fields this update() produces.
 
-import { Gait } from './gait.js';
+import { Gait } from './kinematics/gait.js';
 import { Face } from './face.js';
-import { Executor } from './executor.js';
-import { makeHop } from './maneuvers.js';
-import { planRoute, nearestPointOnTerrain } from './terrain.js';
+import { Executor } from './kinematics/executor.js';
+import { makeHop } from './kinematics/maneuvers.js';
+import { planRoute, nearestPointOnTerrain, NAV } from './path/terrain.js';
 import { clamp, lerp, spring, rot2d, randRange, choose } from './math.js';
 
 // The robot is character-agnostic: proportions, motion tuning, and the face
@@ -33,6 +33,15 @@ export class Robot {
     this.headY = 0;
     this.headRot = 0;
     this.headWiggle = 0;
+    // Head inertia: the monitor lags/tips when the body lurches, scaled by the
+    // character's P.headMass (heavy hero high, nimble imp near zero).
+    this.headSway = 0;
+    this.headSwayV = 0;
+    this.prevVel = 0;
+    // Per-character traversal caps: which nav moves this robot may plan. The
+    // heavy hero uses base NAV; a nimble character sets params.nav higher and
+    // routes through hops/climbs/drops the hero's planner rejects.
+    this.caps = P.nav || NAV;
     this.mode = 'ground'; // 'ground' | 'maneuver'
     this.state = 'wake';
     this.stateT = 0;
@@ -146,7 +155,7 @@ export class Robot {
 
   _planTo(goal, opts) {
     const plan = () => {
-      const steps = planRoute(this.graph, { seg: this.seg, x: this.x }, goal);
+      const steps = planRoute(this.graph, { seg: this.seg, x: this.x }, goal, this.caps);
       if (!steps) {
         this.face.set('glitch', 0.4);
         this.setState('idle');
@@ -209,10 +218,12 @@ export class Robot {
     );
     if (!candidates.length) return;
     const target = choose(candidates);
-    const steps = planRoute(this.graph, { seg: this.seg, x: this.x }, {
-      seg: target.seg,
-      x: target.x + randRange(-30, 30),
-    });
+    const steps = planRoute(
+      this.graph,
+      { seg: this.seg, x: this.x },
+      { seg: target.seg, x: target.x + randRange(-30, 30) },
+      this.caps,
+    );
     if (!steps) return;
     this.speedCap = this.P.wanderSpeed;
     this.executor.setRoute(steps, { noiseScale: 1, onDone: () => this.setState('idle') });
@@ -369,7 +380,16 @@ export class Robot {
       const bobAmp = (0.7 + Math.min(Math.abs(this.vel) * 0.009, 1.6)) * P.scale;
       const targetY =
         this.gait.plantedAvgY(s.y) - P.standH * this.heightScale + Math.sin(this.bobPhase) * bobAmp;
-      [this.bodyY, this.bodyYV] = spring(this.bodyY, this.bodyYV, targetY, dt, 190, 22);
+      // Body springs are per-character so a heavy robot settles softer and a
+      // nimble one snaps crisper; defaults keep the original signed-off feel.
+      [this.bodyY, this.bodyYV] = spring(
+        this.bodyY,
+        this.bodyYV,
+        targetY,
+        dt,
+        P.bodySpring ?? 190,
+        P.bodyDamp ?? 22,
+      );
 
       const frontY = (this.gait.feet[0].y + this.gait.feet[1].y) / 2;
       const backY = (this.gait.feet[2].y + this.gait.feet[3].y) / 2;
@@ -377,9 +397,26 @@ export class Robot {
       // atan of the slope, not atan2: span is negative when facing left and
       // atan2 would snap to ~pi, pinning a hard clockwise lean.
       const stance = Math.atan((frontY - backY) / span) * 0.2;
-      const lean = clamp(this.vel * 0.00025, -0.045, 0.045);
-      [this.rot, this.rotV] = spring(this.rot, this.rotV, stance + lean, dt, 160, 24);
+      const leanMax = P.leanMax ?? 0.045;
+      const lean = clamp(this.vel * (P.leanGain ?? 0.00025), -leanMax, leanMax);
+      [this.rot, this.rotV] = spring(
+        this.rot,
+        this.rotV,
+        stance + lean,
+        dt,
+        P.rotSpring ?? 160,
+        P.rotDamp ?? 24,
+      );
     }
+
+    // --- head inertia (weight) ---
+    // The monitor trails the chest when the body lurches off and pitches forward
+    // when it stops hard, scaled by P.headMass (heavy hero high, imp near zero).
+    // A spring gives the lag-then-settle read; nothing else touches these.
+    const accel = this.mode === 'ground' ? (this.vel - this.prevVel) / Math.max(dt, 1e-4) : 0;
+    this.prevVel = this.vel;
+    const swayTarget = clamp(-accel * 0.00055, -1, 1) * (P.headMass ?? 0);
+    [this.headSway, this.headSwayV] = spring(this.headSway, this.headSwayV, swayTarget, dt, 85, 11);
 
     // --- head and gaze ---
     // The monitor rides above the chest, leaning slightly into the facing.
@@ -388,14 +425,15 @@ export class Robot {
       -(P.bodyH / 2 + P.headH / 2 - 2 * P.scale),
       this.rot,
     );
-    this.headX = this.x + headLocal.x;
+    this.headX = this.x + headLocal.x + this.headSway * 15 * P.scale;
     this.headY = this.bodyY + headLocal.y;
     const gt =
       this.gazeOverride ||
       (cur ? { x: cur.x, y: cur.y } : { x: this.x + this.facing * 120, y: this.bodyY });
     this.gazeX = clamp((gt.x - this.headX) / 260, -1, 1);
     this.gazeY = clamp((gt.y - this.headY) / 180, -1, 1);
-    this.headRot = this.rot * 0.6 + this.headWiggle + this.gazeY * 0.03 * this.facing;
+    this.headRot =
+      this.rot * 0.6 + this.headWiggle + this.gazeY * 0.03 * this.facing + this.headSway * 0.16;
     this.face.update(dt, this.gazeX, this.gazeY);
 
     // --- legs: straight capsules from hip to foot, no joints ---

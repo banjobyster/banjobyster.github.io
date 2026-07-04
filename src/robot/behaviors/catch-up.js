@@ -3,8 +3,8 @@
 // ladder). Claims the slot the whole time the robot is offscreen so
 // ambience never fights the walk back in.
 
-import { clamp } from '../engine/math.js';
-import { planRoute } from '../engine/terrain.js';
+import { clamp } from 'bysters/core/math.js';
+import { planRoute } from 'bysters/core/path/terrain.js';
 
 export function catchUp() {
   return {
@@ -71,7 +71,7 @@ export function catchUp() {
             );
           let best = null;
           for (const seg of onScreen) {
-            if (planRoute(g, from, { seg: seg.id, x: (seg.x1 + seg.x2) / 2 })) {
+            if (planRoute(g, from, { seg: seg.id, x: (seg.x1 + seg.x2) / 2 }, R.caps)) {
               best = seg;
               break;
             }

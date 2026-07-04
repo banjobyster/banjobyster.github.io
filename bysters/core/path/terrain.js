@@ -2,8 +2,11 @@
 // walkable top-edge segments, links them into a nav graph with typed
 // transitions (walk, hop, climb, drop), and plans routes with A*.
 
-import { clamp, dist } from './math.js';
+import { clamp, dist } from '../math.js';
 
+// Base traversal limits (SPEC 4.2c). These are the BINDING absolute-px contract
+// the level design and scripts/check-terrain.mjs verify against, and the caps a
+// normal (heavy) robot plans with. They never scale with any character.
 export const NAV = {
   hopMaxX: 120,
   hopMaxY: 80,
@@ -11,6 +14,32 @@ export const NAV = {
   dropMax: 320,
   edgeInset: 2, // walkable segment is inset from the rect corners
 };
+
+// The most permissive limits any character may use. The live overlay graph is
+// compiled to these (a superset of NAV), and every transition edge is tagged
+// with the metric that gates it so planRoute can filter per character. A nimble
+// character (the imp) plans with caps up to these; the heavy hero plans with
+// NAV, so it only ever uses the base subset and its verified connectivity is
+// unchanged. The compiler's default stays NAV, so the terrain check and the
+// sandbox keep measuring the base contract.
+export const NAV_AGILE = {
+  hopMaxX: 190,
+  hopMaxY: 125,
+  climbMax: 155,
+  dropMax: 440,
+  edgeInset: 2,
+};
+
+// Can a character with these caps traverse this edge? Walk edges (no req) are
+// always allowed; transition edges carry the geometry that gates them.
+export function edgeAllowed(edge, caps) {
+  const r = edge.req;
+  if (!r) return true;
+  if (r.climb != null && r.climb > caps.climbMax) return false;
+  if (r.drop != null && r.drop > caps.dropMax) return false;
+  if (r.hopX != null && (r.hopX > caps.hopMaxX || r.hopY > caps.hopMaxY)) return false;
+  return true;
+}
 
 function nearestBelow(rects, x, yAbove, exceptRect) {
   // The first surface strictly below yAbove that spans x. Used so drops
@@ -25,7 +54,10 @@ function nearestBelow(rects, x, yAbove, exceptRect) {
   return best;
 }
 
-export function compileTerrain(rects) {
+// limits: the max moves the compiled graph should contain. Defaults to NAV (the
+// base contract) so the terrain check and sandbox measure base connectivity;
+// the live overlay compiles with NAV_AGILE and lets planRoute filter per robot.
+export function compileTerrain(rects, limits = NAV) {
   const segments = rects.map((r, i) => ({
     id: i,
     x1: r.x + NAV.edgeInset,
@@ -35,11 +67,13 @@ export function compileTerrain(rects) {
   }));
 
   const nodes = [];
-  const adj = new Map(); // nodeId -> [{to, type, cost}]
+  const adj = new Map(); // nodeId -> [{to, type, cost, req}]
 
-  const addEdge = (a, b, type, cost) => {
+  // req (optional): the geometry that gates this transition, so planRoute can
+  // allow it only for a character whose caps cover it (see edgeAllowed).
+  const addEdge = (a, b, type, cost, req) => {
     if (!adj.has(a)) adj.set(a, []);
-    adj.get(a).push({ to: b, type, cost });
+    adj.get(a).push({ to: b, type, cost, req });
   };
 
   const addNode = (seg, x) => {
@@ -64,7 +98,7 @@ export function compileTerrain(rects) {
     for (const lower of segments) {
       if (lower === upper) continue;
       const dy = lower.y - upper.y;
-      if (dy <= 0 || dy > NAV.climbMax) continue;
+      if (dy <= 0 || dy > limits.climbMax) continue;
       const sides = [
         { cornerX: upper.x1, approachX: upper.rect.x - 10 },
         { cornerX: upper.x2, approachX: upper.rect.x + upper.rect.w + 10 },
@@ -84,8 +118,8 @@ export function compileTerrain(rects) {
         if (blocker && blocker.y < lower.y) continue;
         const nLow = addNode(lower, side.approachX);
         const nHigh = addNode(upper, side.cornerX);
-        addEdge(nLow.id, nHigh.id, 'climb', dy * 2 + 40);
-        addEdge(nHigh.id, nLow.id, 'drop', dy * 0.6 + 12);
+        addEdge(nLow.id, nHigh.id, 'climb', dy * 2 + 40, { climb: dy });
+        addEdge(nHigh.id, nLow.id, 'drop', dy * 0.6 + 12, { drop: dy });
       }
     }
   }
@@ -95,14 +129,16 @@ export function compileTerrain(rects) {
     for (const b of segments) {
       if (a === b) continue;
       const gapX = b.rect.x - (a.rect.x + a.rect.w);
-      if (gapX <= 6 || gapX > NAV.hopMaxX) continue;
-      if (Math.abs(a.y - b.y) > NAV.hopMaxY) continue;
+      if (gapX <= 6 || gapX > limits.hopMaxX) continue;
+      const hopY = Math.abs(a.y - b.y);
+      if (hopY > limits.hopMaxY) continue;
       const nA = addNode(a, a.x2);
       const nB = addNode(b, b.x1);
       const d = dist(nA.x, nA.y, nB.x, nB.y);
       const upPenalty = (target, from) => (target.y < from.y ? (from.y - target.y) * 0.8 : 0);
-      addEdge(nA.id, nB.id, 'hop', d * 1.4 + 25 + upPenalty(nB, nA));
-      addEdge(nB.id, nA.id, 'hop', d * 1.4 + 25 + upPenalty(nA, nB));
+      const req = { hopX: gapX, hopY };
+      addEdge(nA.id, nB.id, 'hop', d * 1.4 + 25 + upPenalty(nB, nA), req);
+      addEdge(nB.id, nA.id, 'hop', d * 1.4 + 25 + upPenalty(nA, nB), req);
     }
   }
 
@@ -116,12 +152,12 @@ export function compileTerrain(rects) {
       const below = nearestBelow(rects, c.offX, upper.y, upper.rect);
       if (!below) continue;
       const dy = below.y - upper.y;
-      if (dy > NAV.dropMax) continue;
+      if (dy > limits.dropMax) continue;
       const lowerSeg = segments.find((s) => s.rect === below);
       if (c.offX < lowerSeg.x1 || c.offX > lowerSeg.x2) continue;
       const nHigh = addNode(upper, c.x);
       const nLow = addNode(lowerSeg, c.offX);
-      addEdge(nHigh.id, nLow.id, 'drop', dy * 0.5 + 15);
+      addEdge(nHigh.id, nLow.id, 'drop', dy * 0.5 + 15, { drop: dy });
     }
   }
 
@@ -153,8 +189,10 @@ export function nearestPointOnTerrain(graph, px, py) {
 // A* over the nav graph. start/goal: {seg, x}. Returns a list of steps:
 //   {type:'walk', seg, toX, y}
 //   {type:'hop'|'climb'|'drop', from:{x,y,seg}, to:{x,y,seg}}
-// or null when unreachable.
-export function planRoute(graph, start, goal) {
+// or null when unreachable. caps gates which transition edges are usable, so a
+// nimble character routes through moves a heavy one cannot (defaults to the
+// base NAV contract).
+export function planRoute(graph, start, goal, caps = NAV) {
   const { segments, nodes, adj } = graph;
   const startSeg = segments[start.seg];
   const goalSeg = segments[goal.seg];
@@ -214,6 +252,7 @@ export function planRoute(graph, start, goal) {
     closed.add(cur.id);
     for (const e of neighbors(cur.id)) {
       if (closed.has(e.to)) continue;
+      if (!edgeAllowed(e, caps)) continue;
       const ng = g.get(cur.id) + e.cost;
       if (ng < (g.get(e.to) ?? Infinity)) {
         g.set(e.to, ng);

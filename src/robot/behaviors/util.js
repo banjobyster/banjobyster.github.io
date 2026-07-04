@@ -15,38 +15,31 @@ export function cssColorToInt(str, fallback) {
   return fallback;
 }
 
-// ---------------- task stations (Part 3c) ----------------
-// Stations are DOM elements tagged data-station / data-state that the robot
-// cast sabotages and repairs. The robot stack must not import React, so it
-// talks to them purely through the DOM: request a change by dispatching this
-// event, read the current state off the attribute. The event name is
-// duplicated in src/components/stations.js; the two must stay in sync.
-export const STATION_EVENT = 'robot:station';
+// ---------------- task stations (Part 3) ----------------
+// Stations are DOM elements tagged data-station that the robot cast sabotages
+// and repairs. Their geometry is the live DOM (a station is also a data-terrain
+// platform, so api.segFor(el) resolves it); their STATE is the shared station
+// store, read and written synchronously through the facade (api.stationState /
+// api.setStation). No DOM-attribute-as-state, no async round trip.
 
-export function setStation(name, state) {
-  window.dispatchEvent(new CustomEvent(STATION_EVENT, { detail: { name, state } }));
-}
-
-// On-screen stations, each resolved to its terrain segment. Every station
-// element is itself a data-terrain element, so api.segFor(el) finds it
-// directly. Pass wantState to filter (e.g. 'ok' for sabotage targets,
-// 'broken' for repair jobs). Reachability is left to the caller (planRoute
-// needs the robot's current position).
+// On-screen stations, each resolved to its terrain segment. Pass wantState to
+// filter (e.g. 'ok' for sabotage targets, 'broken' for repair jobs).
+// Reachability is left to the caller (planRoute needs the robot's position).
 export function findStations(api, wantState = null) {
   const g = api.graph();
   if (!g) return [];
-  const sy = window.scrollY;
-  const vh = window.innerHeight;
+  const { scrollY: sy, viewportH: vh } = api.space();
   const out = [];
   for (const el of document.querySelectorAll('[data-station]')) {
     if (!el.isConnected) continue;
-    const state = el.dataset.state;
+    const name = el.dataset.station;
+    const state = api.stationState(name);
     if (wantState && state !== wantState) continue;
     const seg = api.segFor(el);
     if (seg < 0) continue;
     const s = g.segments[seg];
     if (s.y < sy + 6 || s.y > sy + vh - 6) continue; // fully on screen
-    out.push({ el, name: el.dataset.station, state, seg, s });
+    out.push({ el, name, state, seg, s });
   }
   return out;
 }
@@ -68,23 +61,41 @@ export function nearestOther(api, self) {
 // prefer: 'below' | 'above'. Falls back to the other side, then to any
 // offscreen platform. Returns { seg, x } or null. Never teleports: the caller
 // routes to it through the graph (the corridor band makes the exit legal).
-export function offscreenTarget(api, R, prefer, planRoute) {
+//
+// opts.hero: when escaping a rival, prefer the vertical side AWAY from it and
+// aim for the platform farthest from it, so the imp flees up, down, or off to
+// the side depending on where the hero is, instead of always draining downward.
+// Routes with R's own caps, so the nimble imp can pick exits the hero cannot.
+export function offscreenTarget(api, R, prefer, planRoute, opts = {}) {
   const g = api.graph();
   if (!g) return null;
-  const sy = window.scrollY;
-  const vh = window.innerHeight;
+  const { scrollY: sy, viewportH: vh } = api.space();
   const from = { seg: R.seg, x: R.x };
+  const caps = R.caps;
+  const hero = opts.hero || null;
+  const cx = (s) => (s.x1 + s.x2) / 2;
   const band = (side) =>
     side === 'below' ? [sy + vh + 40, sy + vh + 560] : [sy - 560, sy - 40];
-  const sides = prefer === 'above' ? ['above', 'below'] : ['below', 'above'];
+  let sides;
+  if (hero) {
+    const away = R.bodyY >= hero.bodyY ? 'below' : 'above';
+    sides = [away, away === 'below' ? 'above' : 'below'];
+  } else {
+    sides = prefer === 'above' ? ['above', 'below'] : ['below', 'above'];
+  }
   for (const side of sides) {
     const [lo, hi] = band(side);
     const cand = g.segments
       .filter((s) => s.rect.tag !== 'ground' && s.x2 - s.x1 >= 36 && s.y >= lo && s.y <= hi)
-      .sort((a, b) => Math.abs((a.x1 + a.x2) / 2 - R.x) - Math.abs((b.x1 + b.x2) / 2 - R.x));
+      .sort((a, b) =>
+        hero
+          ? Math.hypot(cx(b) - hero.x, b.y - hero.bodyY) -
+            Math.hypot(cx(a) - hero.x, a.y - hero.bodyY)
+          : Math.abs(cx(a) - R.x) - Math.abs(cx(b) - R.x),
+      );
     for (const s of cand) {
-      const x = (s.x1 + s.x2) / 2;
-      if (planRoute(g, from, { seg: s.id, x })) return { seg: s.id, x, y: s.y };
+      const x = cx(s);
+      if (planRoute(g, from, { seg: s.id, x }, caps)) return { seg: s.id, x, y: s.y };
     }
   }
   return null;

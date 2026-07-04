@@ -31,10 +31,10 @@ function portStamp(state, count) {
 
 function App() {
   const { featured, repos, state } = useProjects();
-  // Two more task stations the robot cast fights over: the hero dock (the
-  // port row) and the storage bay (the repo hatch). React owns their state;
-  // the robots request changes through the station event bus.
-  const dockState = useStation("dock");
+  // The storage bay (the repo hatch) is a task station the robot cast fights
+  // over. React owns its state; the robots request changes through the station
+  // store. The hero port row is NOT a station: it is the boot plug-in theater,
+  // so the only rivalry target on the landing is the live deploy pipeline.
   const bayState = useStation("bay");
 
   return (
@@ -65,12 +65,7 @@ function App() {
             <IconMail />
           </a>
         </div>
-        <div
-          className="portRow"
-          data-terrain="port-row"
-          data-station="dock"
-          data-state={dockState}
-        >
+        <div className="portRow" data-terrain="port-row">
           <span className="portJack" id="port" data-terrain="port" aria-hidden="true">
             <i />
           </span>

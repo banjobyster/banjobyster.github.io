@@ -5,13 +5,18 @@
 // the nearest-neighbor face blit.
 
 import { Container, Graphics } from 'pixi.js';
-import { clamp, qbez } from './math.js';
+import { clamp, qbez } from '../../core/math.js';
 
 export class RobotRenderer {
-  constructor(parent, character) {
+  constructor(parent, character, opts = {}) {
     this.C = character;
     this.P = character.params;
+    // A ground shadow only reads on a floor; on walls, undersides and mid-jump
+    // it has no real ground to fall on. Consumers of a many-angle world can opt
+    // out (`shadow: false`); the flagship floor look keeps it by default.
+    this.shadow = opts.shadow !== false;
     this.pix = character.palette.pix; // face palette; may be tinted per accent
+    this.paletteHold = 0; // seconds left on a temporary accent tint (0 = sticky)
     this.root = new Container();
     parent.addChild(this.root);
 
@@ -47,8 +52,13 @@ export class RobotRenderer {
     this.root.addChild(this.shadowG, this.legsFar, this.bodyC, this.legsNear, this.headC);
   }
 
-  setFacePalette(pix) {
+  // Override the face palette. hold > 0 auto-reverts to the character default
+  // after that many seconds (a brief accent echo); hold 0 is sticky until the
+  // caller resets it with setFacePalette(null). The caller marks R.face.dirty
+  // so the recolor blits; the auto-revert in draw() does the same.
+  setFacePalette(pix, hold = 0) {
     this.pix = pix || this.C.palette.pix;
+    this.paletteHold = hold;
   }
 
   destroy() {
@@ -134,14 +144,44 @@ export class RobotRenderer {
 
   draw(R, dt) {
     const P = this.P;
+
+    // Live body presentation, read from state each frame so the appearance channel
+    // can fade or tint the byster at runtime. null means the neutral default.
+    this.root.alpha = R.alpha != null ? R.alpha : 1;
+    this.root.tint = R.tint != null ? R.tint : 0xffffff;
+
+    // Expire a temporary accent tint and force the face to re-blit in the
+    // character's own palette.
+    if (this.paletteHold > 0) {
+      this.paletteHold -= dt;
+      if (this.paletteHold <= 0) {
+        this.pix = this.C.palette.pix;
+        R.face.dirty = true;
+      }
+    }
+
     this.bodyC.position.set(R.x, R.bodyY);
     this.bodyC.rotation = R.rot;
     this.headC.position.set(R.headX, R.headY);
     this.headC.rotation = R.headRot;
 
-    // Soft ground shadow, fading with altitude.
+    // Soft ground shadow, fading with altitude. Two sources: a surface-local
+    // mover supplies contact + normal (so the shadow lies flat on a wall or an
+    // underside), otherwise the classic top-surface path uses graph/segment.
     this.shadowG.clear();
-    if (R.graph) {
+    this.shadowG.position.set(0, 0);
+    this.shadowG.rotation = 0;
+    if (this.shadow && R.contact && R.normal) {
+      const alt = Math.max(Math.hypot(R.x - R.contact.x, R.bodyY - R.contact.y) - P.standH, 0);
+      const k = clamp(1 - alt / 170, 0, 1);
+      if (k > 0.05) {
+        this.shadowG.position.set(R.contact.x, R.contact.y);
+        this.shadowG.rotation = Math.atan2(R.normal.x, -R.normal.y);
+        this.shadowG
+          .ellipse(0, 2, 27 * (0.55 + 0.45 * k), 4.4 * (0.6 + 0.4 * k))
+          .fill({ color: 0x000000, alpha: 0.22 * k });
+      }
+    } else if (this.shadow && R.graph) {
       const surf = R.segment.y;
       const alt = Math.max(surf - R.bodyY - P.standH, 0);
       const k = clamp(1 - alt / 170, 0, 1);

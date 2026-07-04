@@ -15,7 +15,7 @@ export function pipeline() {
     },
 
     update(ctx) {
-      const { d, R, fx, api } = ctx;
+      const { d, R, api } = ctx;
       if (ctx.owner || ctx.section !== 'hero') return false;
       if (!this.benchEl || !this.benchEl.isConnected) {
         this.benchEl = document.querySelector('.bench');
@@ -25,13 +25,11 @@ export function pipeline() {
       const running = phase === 'build' || phase === 'test' || phase === 'ship';
       if (phase !== this.seen) {
         this.seen = phase;
-        const device = {
-          build: 'intake',
-          test: 'mon',
-          ship: 'rack',
-          done: 'rack',
-          fail: this.benchEl.dataset.failed === 'test' ? 'mon' : 'intake',
-        }[phase];
+        const stageDevice = { build: 'intake', test: 'mon', ship: 'rack' };
+        const device =
+          phase === 'fail'
+            ? stageDevice[this.benchEl.dataset.failed] || 'intake'
+            : { ...stageDevice, done: 'rack' }[phase];
         const seg = device
           ? api.segsByTag('bench').find((g) => g.rect.el.dataset.bench === device)
           : null;
@@ -55,11 +53,12 @@ export function pipeline() {
           R.bodyYV -= 120 * R.P.scale;
           d.note('pipeline: deploy passed');
         } else if (phase === 'fail') {
-          const at = seg ? { x: (seg.x1 + seg.x2) / 2, y: seg.y } : { x: R.x, y: R.bodyY };
-          fx.burst(at.x, at.y - 6, 0xf08c3c, 10);
+          // The villain and the station fault FX already carry the break; the
+          // hero just reads as annoyed before repair (priority 55) marches it
+          // over to fix the jammed stage.
           R.face.set('angry', 1.4);
           d.shrug(0.7);
-          d.note('pipeline: stage flaked');
+          d.note('pipeline: stage jammed');
         } else if (phase === 'idle' && R.face.expr === 'sync') {
           R.face.set('idle');
         }

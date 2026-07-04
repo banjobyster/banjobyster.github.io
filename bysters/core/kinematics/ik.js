@@ -1,4 +1,4 @@
-import { clamp } from './math.js';
+import { clamp } from '../math.js';
 
 // Analytic 2-bone IK in 2D. Given hip, foot target and segment lengths,
 // returns the knee position. `bend` (+1/-1) picks which side of the

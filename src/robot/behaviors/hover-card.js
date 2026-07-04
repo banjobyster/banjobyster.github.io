@@ -3,7 +3,7 @@
 // while "reading" it. Purposeful job: near-zero noise, claims the slot while
 // walking or plugged.
 
-import { clamp } from '../engine/math.js';
+import { clamp } from 'bysters/core/math.js';
 import { cssColorToInt, accentPalette } from './util.js';
 
 export function hoverCard() {
@@ -54,8 +54,8 @@ export function hoverCard() {
           if (segIx >= 0) {
             const seg = ctx.api.graph().segments[segIx];
             const port = el.querySelector('.devicePort');
-            const pr = port ? port.getBoundingClientRect() : null;
-            const px = pr ? pr.left + pr.width / 2 + window.scrollX : (seg.x1 + seg.x2) / 2;
+            const pr = port ? ctx.api.space().rectOf(port) : null;
+            const px = pr ? pr.x + pr.w / 2 : (seg.x1 + seg.x2) / 2;
             this.phase = 'walk';
             R.commandGotoSeg(segIx, clamp(px, seg.x1 + 4, seg.x2 - 4), {
               noise: 0.08,

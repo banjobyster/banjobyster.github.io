@@ -22,16 +22,18 @@
 // owns the handle surface (goto, setExpression) and the emitted events.
 
 import { Container, Graphics } from 'pixi.js';
-import { createOverlay } from './engine/overlay.js';
-import { compileTerrain, nearestPointOnTerrain } from './engine/terrain.js';
-import { Robot } from './engine/robot.js';
-import { RobotRenderer } from './engine/renderer.js';
+import { createOverlay } from 'bysters/render/pixi/overlay.js';
+import { compileTerrain, nearestPointOnTerrain, NAV_AGILE } from 'bysters/core/path/terrain.js';
+import { Robot } from 'bysters/core/robot.js';
+import { RobotRenderer } from 'bysters/render/pixi/robot-renderer.js';
+import { DocumentSpace } from 'bysters/dom/space.js';
 import { CRT_TODDLER } from './characters/crt-toddler.js';
 import { GLITCH_IMP } from './characters/glitch-imp.js';
 import { Effects } from './effects.js';
+import { StationFx } from './station-fx.js';
 import { Director } from './director.js';
 import { defaultBehaviors, ambientBehaviors, villainBehaviors } from './behaviors/index.js';
-import { clamp } from './engine/math.js';
+import { clamp } from 'bysters/core/math.js';
 
 const REBUILD_MS = 150;
 const CORRIDOR = 600; // graph extends this far beyond the viewport
@@ -54,7 +56,21 @@ const exposeDebug = () => {
 
 export async function mountRobot(opts = {}) {
   const getPageState = opts.getPageState || (() => ({ fetch: 'loading' }));
+  // Station state comes from the site's shared store (single source of truth).
+  // A tiny in-memory fallback keeps the robot self-contained for the sandbox /
+  // tests, where there is no React site to own it.
+  const stations = opts.stations || (() => {
+    const m = new Map();
+    return { get: (n) => m.get(n) || 'ok', set: (n, s) => m.set(n, s) };
+  })();
   const debug = new URLSearchParams(location.search).get('robot') === 'debug';
+
+  // The injected coordinate/scroll provider. Every scroll read and every
+  // element-rect-to-document-coordinate conversion in the robot module goes
+  // through this now, so nothing here reads window.scroll* directly (TDD
+  // Section 5). space.read() is a per-call snapshot; scroll cannot change
+  // within a frame's synchronous run, so repeated reads in one frame agree.
+  const space = new DocumentSpace();
 
   const app = await createOverlay();
   const world = new Container();
@@ -87,8 +103,7 @@ export async function mountRobot(opts = {}) {
     // Job targets must be on screen; the graph also holds corridor platforms.
     segsByTag: (tag) => {
       if (!graph) return [];
-      const sy = window.scrollY;
-      const vh = window.innerHeight;
+      const { scrollY: sy, viewportH: vh } = space.read();
       return graph.segments.filter(
         (s) => s.rect.tag === tag && s.y >= sy - 4 && s.y <= sy + vh - 6,
       );
@@ -96,6 +111,12 @@ export async function mountRobot(opts = {}) {
     graph: () => graph,
     getPageState,
     emit,
+    // The current Space snapshot, so behaviors and the shared helpers convert
+    // element rects to document coordinates without touching window.
+    space: () => space.read(),
+    // Station state: behaviors read and write it synchronously here.
+    stationState: (name) => stations.get(name),
+    setStation: (name, state) => stations.set(name, state),
     // Every mounted Robot instance, so behaviors can see the rest of the cast
     // (the villain's flee checks the hero's position through this).
     robots: () => robots.map((rec) => rec.robot),
@@ -117,15 +138,20 @@ export async function mountRobot(opts = {}) {
   });
   const primary = robots[0];
 
+  // Station status FX draw on top of the robots so a broken device's warning
+  // badge is never hidden behind a body.
+  const stationFx = new StationFx(stations);
+  world.addChild(stationFx.g);
+
   const debugG = debug ? new Graphics() : null;
   if (debugG) world.addChild(debugG);
 
   // ---------------- terrain ----------------
 
   const collectRects = () => {
-    const sy = window.scrollY;
-    const sx = window.scrollX;
-    const vh = window.innerHeight;
+    const snap = space.read();
+    const sy = snap.scrollY;
+    const vh = snap.viewportH;
     // Corridor band: the viewport plus CORRIDOR on both sides, stretched to
     // include wherever every robot currently is, so each always has a real
     // route back instead of being teleported.
@@ -139,16 +165,15 @@ export async function mountRobot(opts = {}) {
     }
     const rects = [];
     for (const el of document.querySelectorAll('[data-terrain]')) {
-      const r = el.getBoundingClientRect();
-      if (r.width < 8) continue;
-      const top = r.top + sy;
-      if (top < lo || top > hi) continue;
-      rects.push({ x: r.left + sx, y: top, w: r.width, h: r.height, el, tag: el.dataset.terrain });
+      const r = snap.rectOf(el);
+      if (r.w < 8) continue;
+      if (r.y < lo || r.y > hi) continue;
+      rects.push({ x: r.x, y: r.y, w: r.w, h: r.h, el, tag: el.dataset.terrain });
     }
     rects.push({
       x: -200,
       y: sy + vh,
-      w: window.innerWidth + 400,
+      w: snap.viewportW + 400,
       h: 60,
       el: null,
       tag: 'ground',
@@ -177,8 +202,7 @@ export async function mountRobot(opts = {}) {
 
   // How far a robot is beyond the viewport edges (0 while visible).
   const offscreenBy = (robot) => {
-    const sy = window.scrollY;
-    const vh = window.innerHeight;
+    const { scrollY: sy, viewportH: vh } = space.read();
     if (robot.bodyY < sy) return robot.bodyY - sy; // negative: above
     if (robot.bodyY > sy + vh) return robot.bodyY - (sy + vh); // positive: below
     return 0;
@@ -189,8 +213,7 @@ export async function mountRobot(opts = {}) {
   // never sees this; the entrance is always a real climb or drop chain.
   const shortcutPlace = (rec) => {
     const { robot, director } = rec;
-    const sy = window.scrollY;
-    const vh = window.innerHeight;
+    const { scrollY: sy, viewportH: vh } = space.read();
     const above = robot.bodyY < sy + vh / 2;
     const zones = above
       ? [
@@ -258,7 +281,10 @@ export async function mountRobot(opts = {}) {
     deferredRebuilds = 0;
 
     const prevs = spawned && graph ? robots.map((rec) => graph.segments[rec.robot.seg]) : null;
-    graph = compileTerrain(collectRects());
+    // Compile to the permissive superset; each robot's planner filters edges to
+    // its own caps (the heavy hero to base NAV, the nimble imp higher). The base
+    // connectivity the terrain check verifies is the hero's subset of this.
+    graph = compileTerrain(collectRects(), NAV_AGILE);
     groundIx = graph.segments.length - 1;
 
     if (prevs) {
@@ -307,10 +333,11 @@ export async function mountRobot(opts = {}) {
         if (heroVis.length) ix = heroVis[0].id;
       }
       if (ix < 0) {
+        const snap = space.read();
         const near = nearestPointOnTerrain(
           graph,
-          window.innerWidth * (i === 0 ? 0.45 : 0.8),
-          window.scrollY + window.innerHeight * (i === 0 ? 0.5 : 0.78),
+          snap.viewportW * (i === 0 ? 0.45 : 0.8),
+          snap.scrollY + snap.viewportH * (i === 0 ? 0.5 : 0.78),
         );
         ix = near ? near.seg : groundIx;
       }
@@ -346,8 +373,9 @@ export async function mountRobot(opts = {}) {
 
   const onPointerDown = (e) => {
     if (!spawned) return;
-    const x = e.clientX + window.scrollX;
-    const y = e.clientY + window.scrollY;
+    const snap = space.read();
+    const x = e.clientX + snap.scrollX;
+    const y = e.clientY + snap.scrollY;
     // Poke hit-testing checks the whole cast; the nearest hit takes it.
     let hit = null;
     let hitD = Infinity;
@@ -368,7 +396,7 @@ export async function mountRobot(opts = {}) {
     }
   };
 
-  let lastScrollY = window.scrollY;
+  let lastScrollY = space.read().scrollY;
   let scrollSpeed = 0;
 
   const onVisibility = () => {
@@ -391,9 +419,10 @@ export async function mountRobot(opts = {}) {
 
   const step = (dt) => {
     if (disposed || !spawned) return;
-    const sy = window.scrollY;
-    const vh = window.innerHeight;
-    world.position.set(-window.scrollX, -sy);
+    const snap = space.read();
+    const sy = snap.scrollY;
+    const vh = snap.viewportH;
+    world.position.set(-snap.scrollX, -sy);
 
     // scroll speed sensor (smoothed)
     scrollSpeed = scrollSpeed * 0.8 + (Math.abs(sy - lastScrollY) / Math.max(dt, 0.001)) * 0.2;
@@ -423,21 +452,23 @@ export async function mountRobot(opts = {}) {
     cursor.speed = Math.hypot(cursor.vx, cursor.vy);
     const cursorDoc = cursor.has
       ? {
-          x: cursor.cx + window.scrollX,
+          x: cursor.cx + snap.scrollX,
           y: cursor.cy + sy,
           vx: cursor.vx,
           vy: cursor.vy,
           speed: cursor.speed,
         }
       : null;
-    const sensors = { cursor: cursorDoc, hoverCard, scrollY: sy, vh, scrollSpeed };
+    // space: the frame snapshot, so behaviors convert element rects to document
+    // coordinates through it (ctx.sensors.space) instead of reading window.
+    const sensors = { cursor: cursorDoc, hoverCard, scrollY: sy, vh, scrollSpeed, space: snap };
 
     for (const rec of robots) {
       const { robot } = rec;
       // near-zero work while sleeping, per robot: sim at ~11Hz, effects live
       if (robot.state === 'sleep' && !robot.executor.active) {
         rec.sleepAccum += dt;
-        rec.effects.update(dt);
+        rec.effects.update(dt, snap);
         if (rec.sleepAccum < 0.09) continue;
         robot.update(rec.sleepAccum, { cursor: cursorDoc });
         rec.director.update(rec.sleepAccum, sensors);
@@ -447,10 +478,12 @@ export async function mountRobot(opts = {}) {
         rec.sleepAccum = 0;
         robot.update(dt, { cursor: cursorDoc });
         rec.director.update(dt, sensors);
-        rec.effects.update(dt);
+        rec.effects.update(dt, snap);
         rec.renderer.draw(robot, dt);
       }
     }
+
+    stationFx.update(dt, snap);
 
     // sleep/wake events track the primary only
     if (primary.robot.state !== prevState) {
@@ -518,6 +551,9 @@ export async function mountRobot(opts = {}) {
       app,
       graph: () => graph,
       rebuild,
+      stations,
+      setStation: (n, s) => stations.set(n, s),
+      stationState: (n) => stations.get(n),
       // Deterministic sim stepping for occluded tabs where rAF never fires.
       step: (seconds = 1) => {
         const n = Math.max(1, Math.round(seconds * 60));

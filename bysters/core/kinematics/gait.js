@@ -2,7 +2,7 @@
 // drifts past a speed-scaled threshold from its rest anchor; diagonal pairs
 // alternate; each step is a short parabolic swing.
 
-import { clamp, lerp, easeInOutQuad, randRange } from './math.js';
+import { clamp, lerp, easeInOutQuad, randRange } from '../math.js';
 
 const PAIRS = [
   [0, 2], // front-near + back-far

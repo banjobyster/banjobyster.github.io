@@ -6,6 +6,12 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist']),
+  // Node-context files (Vite/Vitest config, build scripts) get the node
+  // globals so process/__dirname and friends are not flagged as undefined.
+  {
+    files: ['*.config.js', 'scripts/**/*.{js,mjs}'],
+    languageOptions: { globals: globals.node },
+  },
   {
     files: ['**/*.{js,jsx}'],
     extends: [
