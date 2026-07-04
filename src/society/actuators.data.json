@@ -1,0 +1,107 @@
+{
+  "rack": {
+    "fixture": "rack",
+    "states": [
+      "online",
+      "degraded"
+    ],
+    "transitions": [
+      "online>degraded",
+      "degraded>online"
+    ],
+    "label": "Server rack",
+    "blurb": "Rack units with rolling status LEDs and cooling fans; degrades to a red fault with stalled fans.",
+    "theme": "platform",
+    "inner": "\n      <span class=\"rk-body\">\n        <span class=\"rk-unit\"><span class=\"rk-leds\"><i></i><i></i><i></i></span><span class=\"rk-fan\"></span></span>\n        <span class=\"rk-unit\"><span class=\"rk-leds\"><i></i><i></i><i></i></span><span class=\"rk-fan\"></span></span>\n        <span class=\"rk-unit\"><span class=\"rk-leds\"><i></i><i></i><i></i></span><span class=\"rk-fan\"></span></span>\n      </span>"
+  },
+  "ci-pipeline": {
+    "fixture": "ci-pipeline",
+    "states": [
+      "running",
+      "failed"
+    ],
+    "transitions": [
+      "running>failed",
+      "failed>running"
+    ],
+    "label": "CI Pipeline",
+    "blurb": "A horizontal BUILD to TEST to SHIP pipeline where a bright token streams smoothly along the tracks while stages light in sequence, or freezes mid-track as the middle stage throws a red cross and jitters.",
+    "theme": "tooling",
+    "inner": "<span class=\"ci-body\"><span class=\"ci-well\"><span class=\"ci-track ci-t1\"></span><span class=\"ci-track ci-t2\"></span><span class=\"ci-node ci-n1\"><span class=\"ci-dot\"></span><span class=\"ci-lbl\">BUILD</span></span><span class=\"ci-node ci-n2\"><span class=\"ci-dot\"></span><span class=\"ci-x\"></span><span class=\"ci-lbl\">TEST</span></span><span class=\"ci-node ci-n3\"><span class=\"ci-dot\"></span><span class=\"ci-lbl\">SHIP</span></span><span class=\"ci-token\"></span><span class=\"ci-prog\"></span></span></span>"
+  },
+  "database": {
+    "fixture": "database",
+    "states": [
+      "synced",
+      "draining"
+    ],
+    "transitions": [
+      "synced>draining",
+      "draining>synced"
+    ],
+    "label": "Replicated Datastore",
+    "blurb": "A stacked-disc cylinder database with a live fill level and a satellite replica linked by a replication channel; synced keeps both cans topped up with a pulse traveling the link, draining empties the primary, desyncs the replica, and kills the link red.",
+    "theme": "backend",
+    "inner": "<span class=\"db-stage\"><span class=\"db-primary\"><i class=\"db-led\"></i><span class=\"db-can\"><span class=\"db-disc db-bot\"></span><span class=\"db-wall\"><span class=\"db-fill\"></span></span><span class=\"db-disc db-mid\"></span><span class=\"db-disc db-top\"></span></span></span><span class=\"db-link\"><span class=\"db-pipe\"><span class=\"db-flow\"></span></span><span class=\"db-packet\"></span></span><span class=\"db-replica\"><span class=\"db-can\"><span class=\"db-disc db-bot\"></span><span class=\"db-wall\"><span class=\"db-fill\"></span></span><span class=\"db-disc db-mid\"></span><span class=\"db-disc db-top\"></span></span></span></span>"
+  },
+  "message-queue": {
+    "fixture": "message-queue",
+    "states": [
+      "flowing",
+      "backed-up"
+    ],
+    "transitions": [
+      "flowing>backed-up",
+      "backed-up>flowing"
+    ],
+    "label": "Message Queue",
+    "blurb": "A beige-lab message broker whose intake port streams message tiles down a channel into a consumer when flowing, then jams them into a red, congested pile-up with a full queue-depth meter when backed-up.",
+    "theme": "backend",
+    "inner": "<span class=\"mq-body\">\n  <span class=\"mq-intake\"><i class=\"mq-led\"></i></span>\n  <span class=\"mq-channel\">\n    <i class=\"mq-rail\"></i>\n    <i class=\"mq-msg mq-m1\"></i>\n    <i class=\"mq-msg mq-m2\"></i>\n    <i class=\"mq-msg mq-m3\"></i>\n    <i class=\"mq-msg mq-m4\"></i>\n  </span>\n  <span class=\"mq-consumer\">\n    <i class=\"mq-maw\"></i>\n    <i class=\"mq-core\"></i>\n  </span>\n  <span class=\"mq-depth\">\n    <i class=\"mq-depth-ticks\"></i>\n    <i class=\"mq-depth-fill\"></i>\n  </span>\n</span>"
+  },
+  "container": {
+    "fixture": "container",
+    "states": [
+      "running",
+      "stopped"
+    ],
+    "transitions": [
+      "running>stopped",
+      "stopped>running"
+    ],
+    "label": "Container Pod",
+    "blurb": "A hexagonal compute pod on a base with a rotating gear spinner and status light; running spins the gear with a green heartbeat and inner scan shimmer, stopped greys the pod, halts the gear and drops the light to red.",
+    "theme": "platform",
+    "inner": "<span class=\"ct-base\"></span><span class=\"ct-pod\"><span class=\"ct-lid\"></span><i class=\"ct-led\"></i><span class=\"ct-scan\"><span class=\"ct-gear\"></span></span></span>"
+  },
+  "deploy-rocket": {
+    "fixture": "deploy-rocket",
+    "states": [
+      "shipped",
+      "held"
+    ],
+    "transitions": [
+      "shipped>held",
+      "held>shipped"
+    ],
+    "label": "Deploy Rocket",
+    "blurb": "A launch-pad fixture whose capsule rocket either lifts off with a live exhaust plume under a green DEPLOYED lamp, or sits clamped and grounded venting idle steam under a blinking red HOLD lamp.",
+    "theme": "platform",
+    "inner": "<span class=\"dr-body\">\n  <span class=\"dr-well\">\n    <span class=\"dr-gantry\"></span>\n    <span class=\"dr-clamp\"></span>\n    <span class=\"dr-smoke\"></span>\n    <span class=\"dr-smoke b\"></span>\n    <span class=\"dr-smoke c\"></span>\n    <span class=\"dr-steam\"></span>\n    <span class=\"dr-plume\"></span>\n    <span class=\"dr-rocket\">\n      <span class=\"dr-fin l\"></span>\n      <span class=\"dr-fin r\"></span>\n      <span class=\"dr-nose\"></span>\n      <span class=\"dr-hull\"></span>\n      <span class=\"dr-win\"></span>\n      <span class=\"dr-bell\"></span>\n    </span>\n    <span class=\"dr-pad\"></span>\n  </span>\n  <span class=\"dr-hud\">\n    <span class=\"dr-lamp\"></span>\n    <span class=\"dr-txt\">DEPLOY</span>\n    <span class=\"dr-bars\"><i></i><i></i><i></i><i></i></span>\n  </span>\n</span>"
+  },
+  "monitor": {
+    "fixture": "monitor",
+    "states": [
+      "nominal",
+      "alert"
+    ],
+    "transitions": [
+      "nominal>alert",
+      "alert>nominal"
+    ],
+    "label": "Monitoring Dashboard",
+    "blurb": "A beige-lab monitoring screen whose live scrolling signal runs calm and green when nominal, then turns into an erratic red spike with a blinking ALERT pill when alert.",
+    "theme": "tooling",
+    "inner": "<span class=\"mon-body\"><span class=\"mon-screen\"><span class=\"mon-grid\"></span><span class=\"mon-track\"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span><span class=\"mon-hud\"><span class=\"mon-read\"><span class=\"mon-num\">98.6</span><span class=\"mon-unit\">req/s</span></span><span class=\"mon-pill\"><b>OK</b></span></span></span>"
+  }
+}

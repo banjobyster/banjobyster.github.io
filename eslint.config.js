@@ -6,14 +6,14 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist']),
-  // Node-context files (the Vite config) get the node globals so
-  // process/__dirname and friends are not flagged as undefined.
+  // Node-context files (the Vite config, the gallery build tool) get the node
+  // globals so process/console/URL and friends are not flagged as undefined.
   {
-    files: ['*.config.js'],
+    files: ['*.config.js', '**/*.mjs'],
     languageOptions: { globals: globals.node },
   },
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,mjs}'],
     extends: [
       js.configs.recommended,
       reactHooks.configs['recommended-latest'],

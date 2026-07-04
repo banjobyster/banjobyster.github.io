@@ -1,3 +1,35 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Actuators preview — bysters</title>
+<style>
+
+:root { --font-sans: "Space Grotesk", system-ui, "Segoe UI", sans-serif; --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; }
+:root[data-theme="light"] { color-scheme: light; --bg:#e9e5da; --panel:#f4f1e9; --panel-2:#ddd7c7; --screen:#23211b; --ink:#26231b; --ink-soft:#43402f; --muted:#6f6959; --line:#c6bfac; --line-soft:#d8d2c1; --accent:#1e7a3f; --led:#2fc064; --led-warn:#d9a13b; --led-err:#d96f4a; --led-off:#b5ae9c; --shadow:0 1px 2px rgba(38,35,27,.07),0 8px 20px -10px rgba(38,35,27,.16); }
+:root[data-theme="dark"] { color-scheme: dark; --bg:#191612; --panel:#292419; --panel-2:#110f0a; --screen:#0d0b07; --ink:#f2ecdc; --ink-soft:#d9d1bc; --muted:#aaa089; --line:#4e4732; --line-soft:#393221; --accent:#56d989; --led:#47e381; --led-warn:#e6ac45; --led-err:#ea8058; --led-off:#544c38; --shadow:0 1px 2px rgba(0,0,0,.45),0 12px 28px -12px rgba(0,0,0,.62); }
+
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-sans); -webkit-font-smoothing:antialiased; }
+.top { position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 28px; background:color-mix(in srgb,var(--bg) 88%,transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line-soft); }
+.top h1 { font-size:18px; margin:0; letter-spacing:-.01em; }
+.top p { margin:2px 0 0; font-size:12.5px; color:var(--muted); }
+.toggle { font-family:var(--font-mono); font-size:11px; letter-spacing:.12em; padding:8px 13px; border:1px solid var(--line); border-radius:7px; background:var(--panel); color:var(--muted); cursor:pointer; }
+.toggle:hover { color:var(--ink); border-color:var(--muted); }
+main { max-width:1100px; margin:0 auto; padding:26px 28px 80px; }
+.group-title { font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin:34px 0 14px; padding-bottom:8px; border-bottom:1px solid var(--line-soft); }
+.dev { display:grid; grid-template-columns:220px 1fr; gap:20px; padding:20px 0; border-bottom:1px solid var(--line-soft); }
+.dev-meta h3 { margin:0 0 6px; font-size:16px; }
+.dev-meta .theme { display:inline-block; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; padding:2px 7px; border-radius:20px; border:1px solid var(--line); color:var(--muted); margin-bottom:8px; }
+.dev-meta p { margin:0; font-size:12.5px; line-height:1.55; color:var(--ink-soft); }
+.states { display:flex; flex-wrap:wrap; gap:16px; }
+.cell { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.stage { display:grid; place-items:center; width:190px; height:150px; border:1px solid var(--line-soft); border-radius:12px; background:radial-gradient(120% 120% at 50% 0%, color-mix(in srgb,var(--panel) 60%, var(--bg)) 0%, var(--bg) 80%); box-shadow:var(--shadow); }
+.state-name { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; color:var(--muted); }
+.state-name b { color:var(--ink); }
+@media (max-width:720px){ .dev{ grid-template-columns:1fr; } }
+/* ============================ device css (from actuators.css) ============================ */
 /* =============================================================================
    ACTUATORS: the crafted backend / tooling / platform devices the bysters
    operate. Each is a value-neutral Fixture (a [data-fixture] element with an
@@ -1156,3 +1188,249 @@
 @media (prefers-reduced-motion: reduce) {
   .act * { animation: none !important; }
 }
+
+</style>
+</head>
+<body>
+<div class="top">
+  <div>
+    <h1>Actuator gallery</h1>
+    <p>Every device the bysters operate, in each of its states. Toggle the theme; both must look right.</p>
+  </div>
+  <button class="toggle" id="tg" type="button">THEME</button>
+</div>
+<main>
+
+      <h2 class="group-title">backend</h2>
+      
+        <article class="dev">
+          <div class="dev-meta">
+            <span class="theme">backend</span>
+            <h3>Replicated Datastore</h3>
+            <p>A stacked-disc cylinder database with a live fill level and a satellite replica linked by a replication channel; synced keeps both cans topped up with a pulse traveling the link, draining empties the primary, desyncs the replica, and kills the link red.</p>
+          </div>
+          <div class="states">
+            
+              <div class="cell">
+                <div class="stage"><div class="act act-database" data-state="synced"><span class="db-stage"><span class="db-primary"><i class="db-led"></i><span class="db-can"><span class="db-disc db-bot"></span><span class="db-wall"><span class="db-fill"></span></span><span class="db-disc db-mid"></span><span class="db-disc db-top"></span></span></span><span class="db-link"><span class="db-pipe"><span class="db-flow"></span></span><span class="db-packet"></span></span><span class="db-replica"><span class="db-can"><span class="db-disc db-bot"></span><span class="db-wall"><span class="db-fill"></span></span><span class="db-disc db-mid"></span><span class="db-disc db-top"></span></span></span></span></div></div>
+                <div class="state-name"><b>synced</b> (healthy)</div>
+              </div>
+              <div class="cell">
+                <div class="stage"><div class="act act-database" data-state="draining"><span class="db-stage"><span class="db-primary"><i class="db-led"></i><span class="db-can"><span class="db-disc db-bot"></span><span class="db-wall"><span class="db-fill"></span></span><span class="db-disc db-mid"></span><span class="db-disc db-top"></span></span></span><span class="db-link"><span class="db-pipe"><span class="db-flow"></span></span><span class="db-packet"></span></span><span class="db-replica"><span class="db-can"><span class="db-disc db-bot"></span><span class="db-wall"><span class="db-fill"></span></span><span class="db-disc db-mid"></span><span class="db-disc db-top"></span></span></span></span></div></div>
+                <div class="state-name"><b>draining</b> (degraded)</div>
+              </div>
+          </div>
+        </article>
+        <article class="dev">
+          <div class="dev-meta">
+            <span class="theme">backend</span>
+            <h3>Message Queue</h3>
+            <p>A beige-lab message broker whose intake port streams message tiles down a channel into a consumer when flowing, then jams them into a red, congested pile-up with a full queue-depth meter when backed-up.</p>
+          </div>
+          <div class="states">
+            
+              <div class="cell">
+                <div class="stage"><div class="act act-message-queue" data-state="flowing"><span class="mq-body">
+  <span class="mq-intake"><i class="mq-led"></i></span>
+  <span class="mq-channel">
+    <i class="mq-rail"></i>
+    <i class="mq-msg mq-m1"></i>
+    <i class="mq-msg mq-m2"></i>
+    <i class="mq-msg mq-m3"></i>
+    <i class="mq-msg mq-m4"></i>
+  </span>
+  <span class="mq-consumer">
+    <i class="mq-maw"></i>
+    <i class="mq-core"></i>
+  </span>
+  <span class="mq-depth">
+    <i class="mq-depth-ticks"></i>
+    <i class="mq-depth-fill"></i>
+  </span>
+</span></div></div>
+                <div class="state-name"><b>flowing</b> (healthy)</div>
+              </div>
+              <div class="cell">
+                <div class="stage"><div class="act act-message-queue" data-state="backed-up"><span class="mq-body">
+  <span class="mq-intake"><i class="mq-led"></i></span>
+  <span class="mq-channel">
+    <i class="mq-rail"></i>
+    <i class="mq-msg mq-m1"></i>
+    <i class="mq-msg mq-m2"></i>
+    <i class="mq-msg mq-m3"></i>
+    <i class="mq-msg mq-m4"></i>
+  </span>
+  <span class="mq-consumer">
+    <i class="mq-maw"></i>
+    <i class="mq-core"></i>
+  </span>
+  <span class="mq-depth">
+    <i class="mq-depth-ticks"></i>
+    <i class="mq-depth-fill"></i>
+  </span>
+</span></div></div>
+                <div class="state-name"><b>backed-up</b> (degraded)</div>
+              </div>
+          </div>
+        </article>
+      <h2 class="group-title">tooling</h2>
+      
+        <article class="dev">
+          <div class="dev-meta">
+            <span class="theme">tooling</span>
+            <h3>CI Pipeline</h3>
+            <p>A horizontal BUILD to TEST to SHIP pipeline where a bright token streams smoothly along the tracks while stages light in sequence, or freezes mid-track as the middle stage throws a red cross and jitters.</p>
+          </div>
+          <div class="states">
+            
+              <div class="cell">
+                <div class="stage"><div class="act act-ci-pipeline" data-state="running"><span class="ci-body"><span class="ci-well"><span class="ci-track ci-t1"></span><span class="ci-track ci-t2"></span><span class="ci-node ci-n1"><span class="ci-dot"></span><span class="ci-lbl">BUILD</span></span><span class="ci-node ci-n2"><span class="ci-dot"></span><span class="ci-x"></span><span class="ci-lbl">TEST</span></span><span class="ci-node ci-n3"><span class="ci-dot"></span><span class="ci-lbl">SHIP</span></span><span class="ci-token"></span><span class="ci-prog"></span></span></span></div></div>
+                <div class="state-name"><b>running</b> (healthy)</div>
+              </div>
+              <div class="cell">
+                <div class="stage"><div class="act act-ci-pipeline" data-state="failed"><span class="ci-body"><span class="ci-well"><span class="ci-track ci-t1"></span><span class="ci-track ci-t2"></span><span class="ci-node ci-n1"><span class="ci-dot"></span><span class="ci-lbl">BUILD</span></span><span class="ci-node ci-n2"><span class="ci-dot"></span><span class="ci-x"></span><span class="ci-lbl">TEST</span></span><span class="ci-node ci-n3"><span class="ci-dot"></span><span class="ci-lbl">SHIP</span></span><span class="ci-token"></span><span class="ci-prog"></span></span></span></div></div>
+                <div class="state-name"><b>failed</b> (degraded)</div>
+              </div>
+          </div>
+        </article>
+        <article class="dev">
+          <div class="dev-meta">
+            <span class="theme">tooling</span>
+            <h3>Monitoring Dashboard</h3>
+            <p>A beige-lab monitoring screen whose live scrolling signal runs calm and green when nominal, then turns into an erratic red spike with a blinking ALERT pill when alert.</p>
+          </div>
+          <div class="states">
+            
+              <div class="cell">
+                <div class="stage"><div class="act act-monitor" data-state="nominal"><span class="mon-body"><span class="mon-screen"><span class="mon-grid"></span><span class="mon-track"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span><span class="mon-hud"><span class="mon-read"><span class="mon-num">98.6</span><span class="mon-unit">req/s</span></span><span class="mon-pill"><b>OK</b></span></span></span></div></div>
+                <div class="state-name"><b>nominal</b> (healthy)</div>
+              </div>
+              <div class="cell">
+                <div class="stage"><div class="act act-monitor" data-state="alert"><span class="mon-body"><span class="mon-screen"><span class="mon-grid"></span><span class="mon-track"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span><span class="mon-hud"><span class="mon-read"><span class="mon-num">98.6</span><span class="mon-unit">req/s</span></span><span class="mon-pill"><b>OK</b></span></span></span></div></div>
+                <div class="state-name"><b>alert</b> (degraded)</div>
+              </div>
+          </div>
+        </article>
+      <h2 class="group-title">platform</h2>
+      
+        <article class="dev">
+          <div class="dev-meta">
+            <span class="theme">platform</span>
+            <h3>Server rack</h3>
+            <p>Rack units with rolling status LEDs and cooling fans; degrades to a red fault with stalled fans.</p>
+          </div>
+          <div class="states">
+            
+              <div class="cell">
+                <div class="stage"><div class="act act-rack" data-state="online">
+      <span class="rk-body">
+        <span class="rk-unit"><span class="rk-leds"><i></i><i></i><i></i></span><span class="rk-fan"></span></span>
+        <span class="rk-unit"><span class="rk-leds"><i></i><i></i><i></i></span><span class="rk-fan"></span></span>
+        <span class="rk-unit"><span class="rk-leds"><i></i><i></i><i></i></span><span class="rk-fan"></span></span>
+      </span></div></div>
+                <div class="state-name"><b>online</b> (healthy)</div>
+              </div>
+              <div class="cell">
+                <div class="stage"><div class="act act-rack" data-state="degraded">
+      <span class="rk-body">
+        <span class="rk-unit"><span class="rk-leds"><i></i><i></i><i></i></span><span class="rk-fan"></span></span>
+        <span class="rk-unit"><span class="rk-leds"><i></i><i></i><i></i></span><span class="rk-fan"></span></span>
+        <span class="rk-unit"><span class="rk-leds"><i></i><i></i><i></i></span><span class="rk-fan"></span></span>
+      </span></div></div>
+                <div class="state-name"><b>degraded</b> (degraded)</div>
+              </div>
+          </div>
+        </article>
+        <article class="dev">
+          <div class="dev-meta">
+            <span class="theme">platform</span>
+            <h3>Container Pod</h3>
+            <p>A hexagonal compute pod on a base with a rotating gear spinner and status light; running spins the gear with a green heartbeat and inner scan shimmer, stopped greys the pod, halts the gear and drops the light to red.</p>
+          </div>
+          <div class="states">
+            
+              <div class="cell">
+                <div class="stage"><div class="act act-container" data-state="running"><span class="ct-base"></span><span class="ct-pod"><span class="ct-lid"></span><i class="ct-led"></i><span class="ct-scan"><span class="ct-gear"></span></span></span></div></div>
+                <div class="state-name"><b>running</b> (healthy)</div>
+              </div>
+              <div class="cell">
+                <div class="stage"><div class="act act-container" data-state="stopped"><span class="ct-base"></span><span class="ct-pod"><span class="ct-lid"></span><i class="ct-led"></i><span class="ct-scan"><span class="ct-gear"></span></span></span></div></div>
+                <div class="state-name"><b>stopped</b> (degraded)</div>
+              </div>
+          </div>
+        </article>
+        <article class="dev">
+          <div class="dev-meta">
+            <span class="theme">platform</span>
+            <h3>Deploy Rocket</h3>
+            <p>A launch-pad fixture whose capsule rocket either lifts off with a live exhaust plume under a green DEPLOYED lamp, or sits clamped and grounded venting idle steam under a blinking red HOLD lamp.</p>
+          </div>
+          <div class="states">
+            
+              <div class="cell">
+                <div class="stage"><div class="act act-deploy-rocket" data-state="shipped"><span class="dr-body">
+  <span class="dr-well">
+    <span class="dr-gantry"></span>
+    <span class="dr-clamp"></span>
+    <span class="dr-smoke"></span>
+    <span class="dr-smoke b"></span>
+    <span class="dr-smoke c"></span>
+    <span class="dr-steam"></span>
+    <span class="dr-plume"></span>
+    <span class="dr-rocket">
+      <span class="dr-fin l"></span>
+      <span class="dr-fin r"></span>
+      <span class="dr-nose"></span>
+      <span class="dr-hull"></span>
+      <span class="dr-win"></span>
+      <span class="dr-bell"></span>
+    </span>
+    <span class="dr-pad"></span>
+  </span>
+  <span class="dr-hud">
+    <span class="dr-lamp"></span>
+    <span class="dr-txt">DEPLOY</span>
+    <span class="dr-bars"><i></i><i></i><i></i><i></i></span>
+  </span>
+</span></div></div>
+                <div class="state-name"><b>shipped</b> (healthy)</div>
+              </div>
+              <div class="cell">
+                <div class="stage"><div class="act act-deploy-rocket" data-state="held"><span class="dr-body">
+  <span class="dr-well">
+    <span class="dr-gantry"></span>
+    <span class="dr-clamp"></span>
+    <span class="dr-smoke"></span>
+    <span class="dr-smoke b"></span>
+    <span class="dr-smoke c"></span>
+    <span class="dr-steam"></span>
+    <span class="dr-plume"></span>
+    <span class="dr-rocket">
+      <span class="dr-fin l"></span>
+      <span class="dr-fin r"></span>
+      <span class="dr-nose"></span>
+      <span class="dr-hull"></span>
+      <span class="dr-win"></span>
+      <span class="dr-bell"></span>
+    </span>
+    <span class="dr-pad"></span>
+  </span>
+  <span class="dr-hud">
+    <span class="dr-lamp"></span>
+    <span class="dr-txt">DEPLOY</span>
+    <span class="dr-bars"><i></i><i></i><i></i><i></i></span>
+  </span>
+</span></div></div>
+                <div class="state-name"><b>held</b> (degraded)</div>
+              </div>
+          </div>
+        </article>
+</main>
+<script>
+  var r = document.documentElement;
+  document.getElementById('tg').addEventListener('click', function () {
+    r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark';
+  });
+</script>
+</body>
+</html>
