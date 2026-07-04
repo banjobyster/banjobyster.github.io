@@ -14,6 +14,14 @@
   position: relative;
 }
 
+/* Scene separation: hold the projects far enough below the hero world that the
+   two terrains form disconnected graph clusters. Without this the hero floor
+   sits within drop range of the first card and the hero cast would spill down
+   into the projects. Tuned against the reachability check, not guessed. */
+#featured {
+  padding-top: 300px;
+}
+
 /* A horizontal shelf a byster stands and walks on (top edge is the floor). */
 .floor {
   position: absolute;

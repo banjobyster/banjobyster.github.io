@@ -17,10 +17,12 @@ import { LAUNCH, LAUNCH_AGILE, behaviors } from "@banjobyster/bysters";
 import { CRT_TODDLER } from "./characters/crt-toddler.js";
 import { GLITCH_IMP } from "./characters/glitch-imp.js";
 import { SARGE } from "./characters/sarge.js";
+import { WINNOW } from "./characters/winnow.js";
 
 const {
   operateFixtures, followCursor, wander, watchCursor, watchNearest,
-  approach, flee, caughtBy, reactTo, perch, fatigue, liveliness, mood, flourish,
+  approach, flee, caughtBy, reactTo, perch, fatigue, fleeCursor,
+  avoidCursorGaze, liveliness, mood, flourish,
 } = behaviors;
 
 // Scene-wide cruise derate so nobody blurs across the screen.
@@ -28,6 +30,8 @@ export const DERATE = 0.72;
 
 // Heavier than the imp, so Sarge lumbers; the imp keeps its agile caps.
 const SARGE_CAPS = { maxLaunch: 770, gravity: 2400 };
+// Low gravity: big, slow, floaty leaps. Winnow drifts the cards on these.
+const MOON = { maxLaunch: 900, gravity: 780 };
 
 export const CAST = [
   // ---- HERO: the rivalry over the server rack ----
@@ -89,6 +93,29 @@ export const CAST = [
       watchNearest(),
       liveliness({ base: DERATE, vary: 0.42, every: 1.3 }),
       mood("mischief"),
+    ],
+  },
+
+  // ---- FEATURED PROJECTS: Winnow drifts the real cards ----
+  // Scene 2 IS the projects section: Winnow spawns on the featured cards and
+  // treats them as terrain, walking their tops, scaling their walls and hanging
+  // beneath them. Low gravity turns her hops between cards into slow, floaty
+  // leaps, and she shies away from the cursor, turning glassy when startled.
+  {
+    name: "winnow",
+    character: WINNOW,
+    caps: MOON,
+    speedScale: DERATE,
+    spawnAt: ".device",
+    alpha: 0.6,
+    behaviors: [
+      fleeCursor({ radius: 240, face: "lookaway", speed: 1.6, alpha: 0.14 }),
+      perch({ every: 7, dwell: 3, face: "peek", priority: 60 }),
+      avoidCursorGaze(),
+      wander(),
+      flourish(["peek", "dream"], { every: 5 }),
+      liveliness({ base: DERATE, vary: 0.26, every: 4.4 }),
+      mood("idle"),
     ],
   },
 ];

@@ -16,7 +16,11 @@ export default function ProjectCard({
 }) {
   const unit = String(index + 1).padStart(2, "0");
   return (
-    <article className="device" style={{ "--accent": accent }}>
+    <article
+      className="device"
+      style={{ "--accent": accent }}
+      data-walk="top bottom left right"
+    >
       <a
         className="deviceScreen"
         href={link}

@@ -8,6 +8,7 @@ export default function RepoCard({ repo, index = 0 }) {
       target="_blank"
       rel="noreferrer"
       style={{ "--i": index }}
+      data-walk
     >
       <span className="repoTop mono">
         <span className="repoName">{repo.name}</span>
