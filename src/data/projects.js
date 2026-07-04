@@ -47,6 +47,16 @@ export const FALLBACK = [
     order: 30,
   },
   {
+    title: "bysters",
+    tagline: "Tiny creatures that live on your web page",
+    description:
+      "A **JavaScript** library that brings any page to life with small procedural creatures that read your **DOM** as terrain, sense the cursor and each other, and break and fix things.",
+    image: "bysters.webp",
+    link: "https://banjobyster.github.io/bysters/",
+    accent: "rgba(47, 66, 240, 0.9)",
+    order: 35,
+  },
+  {
     title: "Ray Tracer",
     tagline: "Path-traced renderer in C++",
     description:
