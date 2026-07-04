@@ -2,11 +2,12 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// The reusable creature framework lives in ./bysters (its own package, resolved
-// here by alias while it is still a local dir). `bysters` -> the package entry,
-// `bysters/<subpath>` -> a file inside it. When M-inject makes it a real
-// dependency the alias drops out and the specifiers stay the same.
-const bystersDir = fileURLToPath(new URL('./bysters', import.meta.url))
+// The reusable creature framework now lives in its OWN repo, the sibling `bysters`
+// directory (github.com/banjobyster/bysters), so the portfolio consumes it from
+// there rather than a local copy. This alias resolves `bysters` -> the package
+// entry and `bysters/<subpath>` -> a file inside it, so consumer specifiers stay
+// identical to what an external `import from 'bysters'` would use.
+const bystersDir = fileURLToPath(new URL('../bysters', import.meta.url))
 const bystersAlias = [
   { find: /^bysters$/, replacement: `${bystersDir}/index.js` },
   { find: /^bysters\/(.*)$/, replacement: `${bystersDir}/$1` },
@@ -33,7 +34,9 @@ export default defineConfig({
   // Vitest reads this block; Vite ignores it. The pure core runs headless (no
   // DOM, no Pixi), so the default node environment is right for it.
   test: {
+    // The framework's headless tests live in the sibling bysters repo now; run
+    // them from here so the portfolio still validates the framework it consumes.
     environment: 'node',
-    include: ['bysters/**/*.test.js'],
+    include: ['../bysters/core/**/*.test.js', '../bysters/dom/**/*.test.js'],
   },
 })
