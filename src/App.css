@@ -271,171 +271,6 @@
   }
 }
 
-/* ---------------- hero bench ----------------
-   A decorative bottom-aligned row of three devices (intake crate, test
-   monitor, rack tower) sitting in the hero's lower band. */
-
-.bench {
-  display: flex;
-  align-items: flex-end;
-  gap: 100px;
-  margin-top: auto; /* splits the hero's leftover space with the scroll cue */
-  padding-top: 48px;
-}
-
-.benchItem {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  box-shadow: var(--shadow);
-}
-
-button.benchItem {
-  appearance: none;
-  padding: 0;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-
-button.benchItem:hover {
-  border-color: var(--muted);
-}
-
-.benchLabel {
-  position: absolute;
-  bottom: 5px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 9.5px;
-  letter-spacing: 0.12em;
-  color: var(--muted);
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-.crate {
-  width: 88px;
-  height: 44px;
-  background: var(--panel-2);
-}
-
-.crateGrille {
-  position: absolute;
-  top: 8px;
-  left: 10px;
-  right: 24px;
-  height: 9px;
-  border-radius: 2px;
-  background: repeating-linear-gradient(
-    to right,
-    var(--line) 0 3px,
-    transparent 3px 8px
-  );
-}
-
-.benchLed {
-  position: absolute;
-  top: 9px;
-  right: 9px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--led);
-  animation: benchHint 3.2s ease-in-out infinite;
-}
-
-@keyframes benchHint {
-  0%,
-  78%,
-  100% {
-    opacity: 0.3;
-  }
-  88% {
-    opacity: 0.95;
-  }
-}
-
-.scope {
-  width: 128px;
-  height: 96px;
-}
-
-.scopeScreen {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  right: 8px;
-  bottom: 24px;
-  border-radius: 5px;
-  background: var(--screen);
-  overflow: hidden;
-}
-
-.scopeScreen::after {
-  /* idle test pattern */
-  content: "";
-  position: absolute;
-  left: 7px;
-  right: 7px;
-  bottom: 7px;
-  height: 9px;
-  border-radius: 2px;
-  opacity: 0.85;
-  background: linear-gradient(
-    to right,
-    var(--led) 0 25%,
-    var(--led-warn) 25% 50%,
-    var(--led-err) 50% 75%,
-    var(--led-off) 75% 100%
-  );
-}
-
-.scopeStatus {
-  position: absolute;
-  top: 6px;
-  left: 8px;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  color: var(--led-off);
-}
-
-.tower {
-  width: 96px;
-  height: 152px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 10px 24px;
-}
-
-.towerSlot {
-  position: relative;
-  flex: 1;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--panel-2);
-}
-
-.towerSlot i {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  margin-top: -2px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--led-off);
-}
-
-.towerSlot.lit i {
-  background: var(--led);
-  box-shadow: 0 0 5px 0 color-mix(in srgb, var(--led) 60%, transparent);
-}
-
 .scrollCue {
   margin-top: auto;
   margin-bottom: 30px;
@@ -1004,32 +839,6 @@ button.benchItem:hover {
     right: 16px;
   }
 
-  .bench {
-    gap: 20px;
-  }
-
-  .crate {
-    width: 56px;
-    height: 36px;
-  }
-
-  .crateGrille {
-    top: 6px;
-    left: 8px;
-    right: 20px;
-  }
-
-  .scope {
-    width: 84px;
-    height: 84px;
-  }
-
-  .tower {
-    width: 64px;
-    height: 128px;
-    padding: 8px 8px 22px;
-  }
-
   .device {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1047,31 +856,6 @@ button.benchItem:hover {
 @media (max-width: 619px) {
   .repoGrid {
     grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 359px) {
-  .bench {
-    gap: 14px;
-  }
-
-  .crate {
-    width: 48px;
-    height: 32px;
-  }
-
-  .crate .benchLabel {
-    display: none;
-  }
-
-  .scope {
-    width: 72px;
-    height: 72px;
-  }
-
-  .tower {
-    width: 56px;
-    height: 108px;
   }
 }
 
@@ -1093,11 +877,6 @@ button.benchItem:hover {
   .skelBar {
     animation: none;
     opacity: 0.6;
-  }
-
-  .benchLed,
-  .towerSlot i {
-    animation: none !important;
   }
 
   .ledStrip i,
