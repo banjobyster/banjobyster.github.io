@@ -4,7 +4,6 @@ export default function RepoCard({ repo, index = 0 }) {
   return (
     <a
       className="repoCard"
-      data-terrain="repo"
       href={repo.html_url}
       target="_blank"
       rel="noreferrer"

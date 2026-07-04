@@ -1,7 +1,7 @@
-/* Design tokens + base. Look: "beige lab hardware", the page as the machine
-   the robot lives in. Light is the primary theme; dark is a warm charcoal
-   variant of the same panel language. Theme is set as data-theme on <html>
-   before first paint (see index.html). */
+/* Design tokens + base. Look: "beige lab hardware", the page as a rack of
+   quiet devices. Light is the primary theme; dark is a warm charcoal variant
+   of the same panel language. Theme is set as data-theme on <html> before
+   first paint (see index.html). */
 
 :root {
   --font-sans: "Space Grotesk Variable", "Space Grotesk", system-ui, -apple-system,

@@ -1,17 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 
-// The dashed data cable from the hero port down to the footer socket. It is
-// also the scroll progress indicator (railFill height follows scroll) and,
-// crucially, the robot's ladder: the clips are 44px-wide rungs with
-// alternating +-8px offsets, which satisfies the SPEC 4.2c rules at every
-// breakpoint. Spacing is capped at 80px, NOT the 95px climb limit: when the
-// rung just above a platform top scrolls off the viewport, the robot must
-// still hop across from the next rung below, and the hop window tops out at
-// 80px of rise. Rungs are distributed uniformly so the last one lands 44px
-// above the footer socket (keeping the ground connected at max scroll), and
-// the count is forced even so alternation ends opposite the socket's
-// variant. The hero portJack is rung zero (a "right" variant); the first
-// generated clip is a "left" variant and the alternation stays unbroken.
+// The dashed data cable running down the left gutter, from the hero port to
+// the footer socket. It doubles as a scroll progress indicator (railFill
+// height follows scroll). The clips are decorative 44px-wide cable clamps
+// spaced at most 80px apart with alternating +-8px offsets, distributed
+// uniformly so the last one lands 44px above the footer socket. The count is
+// forced even so the alternation ends opposite the socket's variant, and the
+// hero portJack reads as clip zero.
 const MAX_CLIP_SPACING = 80;
 const CLIP_W = 44;
 const RAIL_CENTER = 36; // inside the 76px gutter
@@ -103,7 +98,6 @@ export default function Cable() {
         <span
           key={c.y}
           className="clip"
-          data-terrain="clip"
           style={{ top: c.y, left: c.left }}
         />
       ))}

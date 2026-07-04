@@ -5,8 +5,6 @@ import RepoCard from "./components/RepoCard";
 import Cable from "./components/Cable";
 import Bench from "./components/Bench";
 import ThemeToggle from "./components/ThemeToggle";
-import RobotOverlay from "./components/RobotOverlay";
-import { useStation } from "./components/stations";
 import {
   IconGitHub,
   IconLinkedIn,
@@ -31,30 +29,18 @@ function portStamp(state, count) {
 
 function App() {
   const { featured, repos, state } = useProjects();
-  // The storage bay (the repo hatch) is a task station the robot cast fights
-  // over. React owns its state; the robots request changes through the station
-  // store. The hero port row is NOT a station: it is the boot plug-in theater,
-  // so the only rivalry target on the landing is the live deploy pipeline.
-  const bayState = useStation("bay");
 
   return (
     <div id="page">
       <ThemeToggle />
       <Cable />
-      <RobotOverlay
-        fetchState={state}
-        repoCount={repos.length}
-        featuredCount={featured.length}
-      />
 
       <header className="hero">
-        <h1 className="heroName" data-terrain="hero">
-          Sayan Bakshi
-        </h1>
-        <p className="heroRole" data-terrain="hero">
+        <h1 className="heroName">Sayan Bakshi</h1>
+        <p className="heroRole">
           Software engineer: backend systems, platform tooling, and competitive programming.
         </p>
-        <div className="heroSocials" data-terrain="hero">
+        <div className="heroSocials">
           <a href={LINKS.github} target="_blank" rel="noreferrer" aria-label="GitHub">
             <IconGitHub />
           </a>
@@ -65,8 +51,8 @@ function App() {
             <IconMail />
           </a>
         </div>
-        <div className="portRow" data-terrain="port-row">
-          <span className="portJack" id="port" data-terrain="port" aria-hidden="true">
+        <div className="portRow">
+          <span className="portJack" id="port" aria-hidden="true">
             <i />
           </span>
           <span className="portLabel mono">PORT DATA-01</span>
@@ -76,10 +62,9 @@ function App() {
             {portStamp(state, featured.length + repos.length)}
           </span>
         </div>
-        {/* The test bench: an interactive deploy-pipeline toy filling the
-            hero's lower band. Every piece is robot terrain (bottom-aligned
-            hoppable staircase per SPEC 4.2c; the crate sits at the content
-            edge, one hop from the rail clips). No hover transforms. */}
+
+        {/* A calm lab bench that fills the hero's lower band: purely decorative
+            hardware in the beige-lab aesthetic. */}
         <Bench />
 
         <a className="scrollCue mono" href="#featured">
@@ -89,7 +74,7 @@ function App() {
       </header>
 
       <section className="section" id="featured">
-        <h2 className="sectionHead" data-terrain="heading">
+        <h2 className="sectionHead">
           <span className="headIndex mono">01</span>
           Featured projects
           <span className="headRule" aria-hidden="true" />
@@ -102,7 +87,7 @@ function App() {
       </section>
 
       <section className="section" id="more">
-        <h2 className="sectionHead" data-terrain="heading">
+        <h2 className="sectionHead">
           <span className="headIndex mono">02</span>
           More on GitHub
           <span className="headRule" aria-hidden="true" />
@@ -110,12 +95,7 @@ function App() {
             github.com/{GITHUB_USER} ↗
           </a>
         </h2>
-        <div
-          className="hatch"
-          data-terrain="hatch"
-          data-station="bay"
-          data-state={bayState}
-        >
+        <div className="hatch">
           <span className="hatchGrille" aria-hidden="true" />
           <span className="hatchLabel mono">EXT STORAGE</span>
         </div>
@@ -146,12 +126,12 @@ function App() {
       </section>
 
       <section className="section" id="about">
-        <h2 className="sectionHead" data-terrain="heading">
+        <h2 className="sectionHead">
           <span className="headIndex mono">03</span>
           About
           <span className="headRule" aria-hidden="true" />
         </h2>
-        <div className="aboutBody" data-terrain="about">
+        <div className="aboutBody">
           <p>
             Sayan here. I like taking systems apart to see what makes them
             tick, then building my own from scratch; most of the projects
@@ -168,12 +148,12 @@ function App() {
       </section>
 
       <footer className="section" id="contact">
-        <h2 className="sectionHead" data-terrain="heading">
+        <h2 className="sectionHead">
           <span className="headIndex mono">04</span>
           Contact
           <span className="headRule" aria-hidden="true" />
         </h2>
-        <div className="contactBody" data-terrain="contact">
+        <div className="contactBody">
           <a className="contactMail" href={`mailto:${EMAIL}`}>
             {EMAIL}
           </a>
@@ -187,7 +167,7 @@ function App() {
           </div>
         </div>
         <div className="footerBar">
-          <span className="cableEndSocket" id="cableEnd" data-terrain="socket" aria-hidden="true" />
+          <span className="cableEndSocket" id="cableEnd" aria-hidden="true" />
           <span className="mono">© 2026 SAYAN BAKSHI</span>
           <span className="mono">EOF</span>
         </div>

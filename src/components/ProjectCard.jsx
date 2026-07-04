@@ -1,17 +1,9 @@
 import { renderText } from "../lib/text.jsx";
-import { useStation } from "./stations";
 
 // A featured project as a device faceplate: dark screen well on the left,
 // spec plate on the right, LED strip and port in the project's accent color.
 // Hovering (or keyboard focus) powers the device on: LEDs light in sequence,
-// the screen brightens, tags tint. The card is robot terrain; hover effects
-// never move its rect.
-//
-// Every featured card is also a live service task station ("svc-N"): the
-// villain corrupts one (broken -> the whole faceplate glitches, screen dies to
-// static) and the hero restores it (busy -> ok). Red goes for whichever card is
-// on screen; blue defends them. With no robot overlay there is no villain, so
-// every service stays online.
+// the screen brightens, tags tint.
 export default function ProjectCard({
   title,
   tagline,
@@ -23,16 +15,8 @@ export default function ProjectCard({
   index = 0,
 }) {
   const unit = String(index + 1).padStart(2, "0");
-  const station = `svc-${index}`;
-  const stationState = useStation(station);
   return (
-    <article
-      className="device"
-      data-terrain="card"
-      data-station={station}
-      data-state={stationState}
-      style={{ "--accent": accent }}
-    >
+    <article className="device" style={{ "--accent": accent }}>
       <a
         className="deviceScreen"
         href={link}
