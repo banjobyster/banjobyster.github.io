@@ -27,7 +27,6 @@ export default defineConfig({
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
         sandbox: fileURLToPath(new URL('./sandbox.html', import.meta.url)),
         bysters: fileURLToPath(new URL('./bysters-sandbox.html', import.meta.url)),
-        playground: fileURLToPath(new URL('./bysters-playground.html', import.meta.url)),
       },
     },
   },
