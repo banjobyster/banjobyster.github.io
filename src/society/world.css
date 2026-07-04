@@ -1,0 +1,84 @@
+/* =============================================================================
+   THE WORLD: terrain the bysters walk, plus the placement scaffolding for the
+   scenes. Terrain elements are marked data-walk; the framework reads their
+   rects and compiles the surface graph. Meaning-free: these are just shelves,
+   rails and ladders in the beige-lab aesthetic.
+
+   A "region" is a section made position:relative so its terrain + devices can
+   be bottom-anchored inside it. Scene-locking is EMERGENT: regions sit far
+   enough apart that their terrain forms disconnected graph clusters, so a
+   byster physically cannot wander out of its scene.
+   ============================================================================= */
+
+.region {
+  position: relative;
+}
+
+/* A horizontal shelf a byster stands and walks on (top edge is the floor). */
+.floor {
+  position: absolute;
+  z-index: 1;
+  height: 12px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--line);
+  box-shadow: 0 5px 0 -3px color-mix(in srgb, var(--ink) 42%, transparent);
+}
+
+/* A smaller platform / ledge. */
+.ledge {
+  position: absolute;
+  z-index: 1;
+  height: 12px;
+  border-radius: 5px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 3px 4px 0 -3px color-mix(in srgb, var(--ink) 42%, transparent);
+}
+
+/* A vertical ladder: a thin post whose left+right faces are climbable walls,
+   bridging a floor to a higher ledge. Marked data-walk="left right"; its rungs
+   are decorative. */
+.ladder {
+  position: absolute;
+  z-index: 1;
+  width: 14px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(
+      180deg,
+      var(--line) 0 2px,
+      transparent 2px 9px
+    ),
+    linear-gradient(180deg, var(--panel), var(--panel-2));
+  border: 1px solid var(--line);
+}
+
+/* A device pedestal: a small plinth an actuator sits on, doubling as a walkable
+   top so a byster can stand beside the device it operates. */
+.plinth {
+  position: absolute;
+  z-index: 1;
+  height: 12px;
+  border-radius: 4px 4px 6px 6px;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 0 -3px color-mix(in srgb, var(--ink) 42%, transparent);
+}
+
+/* The absolute wrapper that positions an actuator over its ledge in the page.
+   The .act inside keeps its own relative sizing box. */
+.act-mount {
+  position: absolute;
+  z-index: 2;
+}
+
+/* Cards are terrain too: give the featured device faceplates a hair of relief
+   so a byster reads as standing ON them, not floating. (Purely cosmetic; the
+   data-walk rect is the card's border box either way.) */
+.device,
+.repoCard {
+  position: relative;
+}
+
+/* Featured project cards double as full-wall terrain (top/bottom/left/right):
+   nothing to add visually, the card border box is the climbable solid. */

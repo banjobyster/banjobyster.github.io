@@ -1,0 +1,197 @@
+/* =============================================================================
+   ACTUATORS: the crafted backend / tooling / platform devices the bysters
+   operate. Each is a value-neutral Fixture (a [data-fixture] element with an
+   opaque state set); the framework only mirrors the store's state onto
+   [data-state]. ALL the meaning (which state reads as healthy vs degraded, the
+   colours, the motion) lives here in CSS, never in the library.
+
+   CONTRACT (so the site and the standalone gallery render identically):
+   - Root element: <div class="act act-<type>" data-fixture="<type>"
+       data-fixture-id="<id>" data-states="<a> <b>" data-state="<a>"
+       data-transitions="<a>&gt;<b> <b>&gt;<a>"> ... inner ... </div>
+   - The root is a fixed-size box (~96-140px). Internals are absolutely
+     positioned within it, so it drops onto a ledge and a byster plugs into its
+     centre. .act is a positioning context (position: relative here; the live
+     site overrides to absolute for placement).
+   - Only the site design tokens are used (--panel, --panel-2, --screen, --ink,
+     --muted, --line, --line-soft, --led, --led-warn, --led-err, --led-off,
+     --accent, --font-mono), so both themes and both contexts stay in sync.
+   - Pure CSS animation, keyed on [data-state]. No JS. Honour reduced motion.
+   Convention: the FIRST declared state reads "healthy/running" (a blue/green
+   operator drives toward it); the second reads "degraded/stalled" (a red
+   gremlin drives toward it).
+   ============================================================================= */
+
+.act {
+  position: relative;
+  width: 116px;
+  height: 104px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  --ok: var(--led);
+  --bad: var(--led-err);
+  --warn: var(--led-warn);
+}
+
+/* A little always-there device chassis shared by several actuators. */
+.act-chassis {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+  overflow: hidden;
+}
+
+/* Optional caption strip a few actuators print along their base. */
+.act-cap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  text-align: center;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* ============================ SERVER RACK ============================
+   Backend / platform. online: LEDs roll green, fans spin, a soft activity
+   shimmer. degraded: LEDs short to red and stutter, the fans stall, the whole
+   chassis takes a red fault edge. */
+.act-rack {
+  width: 108px;
+  height: 116px;
+}
+.act-rack .rk-body {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  padding: 7px 7px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.act-rack .rk-unit {
+  position: relative;
+  flex: 1;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--screen);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 7px;
+  overflow: hidden;
+}
+/* vent grille texture on the left of each unit */
+.act-rack .rk-unit::before {
+  content: "";
+  width: 18px;
+  align-self: stretch;
+  margin: 4px 0;
+  border-radius: 1px;
+  background: repeating-linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--muted) 55%, transparent) 0 1.5px,
+    transparent 1.5px 3.5px
+  );
+  opacity: 0.55;
+}
+.act-rack .rk-leds {
+  display: inline-flex;
+  gap: 4px;
+}
+.act-rack .rk-leds i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--led-off);
+}
+.act-rack .rk-fan {
+  margin-left: auto;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background:
+    conic-gradient(
+      from 0deg,
+      color-mix(in srgb, var(--muted) 70%, transparent) 0 12%,
+      transparent 12% 25%,
+      color-mix(in srgb, var(--muted) 70%, transparent) 25% 37%,
+      transparent 37% 50%,
+      color-mix(in srgb, var(--muted) 70%, transparent) 50% 62%,
+      transparent 62% 75%,
+      color-mix(in srgb, var(--muted) 70%, transparent) 75% 87%,
+      transparent 87% 100%
+    );
+}
+.act-rack .rk-fan::after {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--line);
+}
+
+/* --- online --- */
+.act-rack[data-state="online"] .rk-leds i {
+  background: var(--ok);
+  box-shadow: 0 0 5px -1px var(--ok);
+  animation: rkRoll 1.4s steps(1, end) infinite;
+}
+.act-rack[data-state="online"] .rk-leds i:nth-child(2) { animation-delay: 0.16s; }
+.act-rack[data-state="online"] .rk-leds i:nth-child(3) { animation-delay: 0.32s; }
+.act-rack[data-state="online"] .rk-fan { animation: rkSpin 1.5s linear infinite; }
+.act-rack[data-state="online"] .rk-unit:nth-child(2) .rk-fan { animation-duration: 1.15s; }
+.act-rack[data-state="online"] .rk-unit:nth-child(3) .rk-fan { animation-duration: 1.85s; }
+
+/* --- degraded --- */
+.act-rack[data-state="degraded"] .rk-body {
+  border-color: var(--bad);
+  box-shadow: 0 0 12px -3px var(--bad), inset 0 0 0 1px color-mix(in srgb, var(--bad) 25%, transparent);
+  animation: rkFault 1.1s steps(4, end) infinite;
+}
+.act-rack[data-state="degraded"] .rk-leds i {
+  background: var(--bad);
+  box-shadow: 0 0 5px -1px var(--bad);
+  animation: rkBlink 0.28s steps(2, start) infinite;
+}
+.act-rack[data-state="degraded"] .rk-leds i:nth-child(2) { animation-delay: 0.07s; }
+.act-rack[data-state="degraded"] .rk-leds i:nth-child(3) { animation-delay: 0.14s; }
+/* the fans stall: one jerks intermittently, the rest are dead */
+.act-rack[data-state="degraded"] .rk-unit:nth-child(2) .rk-fan {
+  animation: rkJerk 1.3s steps(1, end) infinite;
+}
+
+@keyframes rkSpin { to { transform: rotate(360deg); } }
+@keyframes rkRoll {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.28; }
+}
+@keyframes rkBlink { 50% { opacity: 0.2; } }
+@keyframes rkJerk {
+  0%, 82%, 100% { transform: rotate(0deg); }
+  86% { transform: rotate(26deg); }
+  90% { transform: rotate(18deg); }
+}
+@keyframes rkFault {
+  0%, 100% { box-shadow: 0 0 12px -3px var(--bad), inset 0 0 0 1px color-mix(in srgb, var(--bad) 25%, transparent); }
+  50% { box-shadow: 0 0 5px -3px var(--bad), inset 0 0 0 1px color-mix(in srgb, var(--bad) 12%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .act * { animation: none !important; }
+}

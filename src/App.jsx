@@ -3,8 +3,9 @@ import { useProjects } from "./hooks/useProjects";
 import ProjectCard from "./components/ProjectCard";
 import RepoCard from "./components/RepoCard";
 import Cable from "./components/Cable";
-import Bench from "./components/Bench";
 import ThemeToggle from "./components/ThemeToggle";
+import BystersOverlay from "./components/BystersOverlay";
+import Actuator from "./society/Actuator";
 import {
   IconGitHub,
   IconLinkedIn,
@@ -34,8 +35,9 @@ function App() {
     <div id="page">
       <ThemeToggle />
       <Cable />
+      <BystersOverlay dataReady={state === "ready"} />
 
-      <header className="hero">
+      <header className="hero region">
         <h1 className="heroName">Sayan Bakshi</h1>
         <p className="heroRole">
           Software engineer: backend systems, platform tooling, and competitive programming.
@@ -63,9 +65,26 @@ function App() {
           </span>
         </div>
 
-        {/* A calm lab bench that fills the hero's lower band: purely decorative
-            hardware in the beige-lab aesthetic. */}
-        <Bench />
+        {/* The hero's lower band is the bysters' world: Byte shorts out the
+            server rack, Pip runs over and brings it back online, and Sarge
+            chases Byte off. Terrain is a floor, a raised ledge, and the rack. */}
+        <div
+          className="floor"
+          id="hero-floor"
+          data-walk
+          aria-hidden="true"
+          style={{ left: "5%", right: "5%", bottom: 74 }}
+        />
+        <div
+          className="ledge"
+          id="hero-ledge"
+          data-walk
+          aria-hidden="true"
+          style={{ right: "8%", width: 118, bottom: 150 }}
+        />
+        <div className="act-mount" style={{ left: "11%", bottom: 86 }}>
+          <Actuator type="rack" id="hero-rack" />
+        </div>
 
         <a className="scrollCue mono" href="#featured">
           SCROLL
