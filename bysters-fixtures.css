@@ -9,37 +9,100 @@
    archive datastore at ext storage, and the last of it lights the email
    neon sign at EOF.
 
-   Stations (every one is a visibly flippable control, with a state tag):
-     .fxIntake    open | closed       breaker at the head of the line
-     .fxPipeline  flowing | jammed    flip lever on the deploy console
-     .fxPort      linked | cut        a card's feed plug (lives IN the port)
-     .fxArchive   syncing | offline   datastore node with a push button
-     .fxNeon      on | off            pull lever on the email neon sign
+   Stations (every one is a control with a visible moving part in a housing;
+   the moving part breaks the housing's silhouette at rest, the standing tell
+   that it is a lever and not a lamp):
+     .fxIntake    open | closed       breaker: lever arm pokes out the top =
+                                      feed open, slammed out the bottom = shut
+     .fxPipeline  flowing | jammed    knife switch: blade seated in its jaw
+                                      with the grip past the plate edge = RUN,
+                                      thrown up over the top = HALT
+     .fxPort      linked | cut        the card is the appliance: its cord
+                                      leaves a gland on the card's bottom edge
+                                      and drops into a wall socket below the
+                                      card; cut = unplugged, left dangling
+     .fxArchive   syncing | offline   latching kill button on the datastore:
+                                      pressed in = offline
+     .fxNeon      on | off            slide lever beside the neon sign
    Cascades:
      intake closed -> html[data-feed="down"]: the whole machine browns out
-     cut           -> that card's screen powers down like a switched-off TV
+     cut           -> that card's screen powers down like a switched-off CRT
      jammed        -> the pipeline freezes mid-track, warning strobes
      offline       -> the sync streams into the repo grid stop
      off           -> the email sign goes dark
-   Plus the sync pulse: every station carries a small beat that fires in
-   document order (--pulse index), so the eye watches one heartbeat travel
-   from PORT to EOF while the feed is up. */
+
+   Interaction channels, one owner each, so nothing fights the cascade:
+     element outline      the human: hover invitation, keyboard focus ring
+     .fxRing child        the ambient sync pulse (the traveling heartbeat)
+     element border+shadow  state: what the fixture currently is
+     pseudo-elements      the moving part: the only thing a state flip moves
+   The fixture's own border-box NEVER changes across states or hover: these
+   elements are walkable terrain and routing targets, so all motion lives on
+   inner parts. State flips ride one shared snap curve (--fx-snap): a single
+   fast throw with a small settle, identical in both directions. */
 
 .fx {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  /* the house move: fast throw, ~7% overshoot, settle */
+  --fx-snap: cubic-bezier(0.3, 1.4, 0.55, 1);
+  --fx-snap-t: 0.2s;
+}
+.fx:hover {
+  outline: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
 }
 .fx:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
-.fx:hover {
-  filter: brightness(1.12);
+
+/* ------------------------------------------------------------ sync pulse -- */
+/* Each fixture carries an <i class="fxRing">: a dedicated attention layer.
+   The heartbeat ping travels station to station in document order (--pulse
+   index) while the feed is up. It lives on this child, not the element, so
+   it can never out-cascade the hover or focus outline. */
+
+.fxRing {
+  position: absolute;
+  inset: -3px;
+  border-radius: 8px;
+  pointer-events: none;
+  animation: fx-sync 4.2s linear infinite;
+  animation-delay: calc(var(--pulse, 0) * 0.32s);
+}
+@keyframes fx-sync {
+  0%, 6%, 100% { box-shadow: 0 0 0 0 transparent; }
+  2% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--led) 45%, transparent); }
+}
+/* ...and as the heartbeat passes a station, its moving part glints: the
+   second standing tell that the part is a live control. One entry per
+   station, naming which pseudo IS its handle. A state that needs its own
+   part animation (the cut plug's dangle) simply overrides this. */
+.fxIntake::after,
+.fxPipeline::before,
+.fxPort::before,
+.fxArchive::after,
+.fxNeon::after {
+  animation: fx-glint 4.2s linear infinite;
+  animation-delay: calc(var(--pulse, 0) * 0.32s);
+}
+@keyframes fx-glint {
+  0%, 6%, 100% { filter: none; }
+  2% { filter: brightness(1.6) drop-shadow(0 0 3px color-mix(in srgb, var(--led) 70%, transparent)); }
+}
+html[data-feed="down"] .fx > .fxRing {
+  animation: none;
+}
+html[data-feed="down"] .fx::before,
+html[data-feed="down"] .fx::after {
+  animation-play-state: paused;
 }
 
 /* ------------------------------------------------------------- state tags -- */
 /* Every fixture is followed by an <i class="fxTag">: a tiny mono readout of
-   its state, so what is clickable (and what it did) is never a mystery. */
+   its state. On hover or keyboard focus it proposes instead: the state one
+   click will produce, phrased as a question, in the warn color. */
 
 .fxTag {
   font-family: var(--font-mono);
@@ -63,75 +126,90 @@
 .fxNeon[data-state="on"] + .fxTag::after { content: "ON"; color: var(--accent); }
 .fxNeon[data-state="off"] + .fxTag::after { content: "OFF"; color: var(--led-err); }
 
-/* ------------------------------------------------------------ sync pulse -- */
-
-.fxIntake, .fxPipeline, .fxPort, .fxArchive, .fxNeon {
-  animation: fx-sync 4.2s linear infinite;
-  animation-delay: calc(var(--pulse, 0) * 0.32s);
-}
-@keyframes fx-sync {
-  0%, 6%, 100% { outline: 0px solid transparent; }
-  2% { outline: 3px solid color-mix(in srgb, var(--led) 45%, transparent); outline-offset: 2px; }
-}
-html[data-feed="down"] .fxIntake,
-html[data-feed="down"] .fxPipeline,
-html[data-feed="down"] .fxPort,
-html[data-feed="down"] .fxArchive,
-html[data-feed="down"] .fxNeon {
-  animation: none;
-}
+.fxIntake[data-state="open"]:hover + .fxTag::after,
+.fxIntake[data-state="open"]:focus-visible + .fxTag::after { content: "SHUT?"; color: var(--led-warn); }
+.fxIntake[data-state="closed"]:hover + .fxTag::after,
+.fxIntake[data-state="closed"]:focus-visible + .fxTag::after { content: "OPEN?"; color: var(--led-warn); }
+.fxPipeline[data-state="flowing"]:hover + .fxTag::after,
+.fxPipeline[data-state="flowing"]:focus-visible + .fxTag::after { content: "HALT?"; color: var(--led-warn); }
+.fxPipeline[data-state="jammed"]:hover + .fxTag::after,
+.fxPipeline[data-state="jammed"]:focus-visible + .fxTag::after { content: "RUN?"; color: var(--led-warn); }
+.fxPort[data-state="linked"]:hover + .fxTag::after,
+.fxPort[data-state="linked"]:focus-visible + .fxTag::after { content: "CUT?"; color: var(--led-warn); }
+.fxPort[data-state="cut"]:hover + .fxTag::after,
+.fxPort[data-state="cut"]:focus-visible + .fxTag::after { content: "LINK?"; color: var(--led-warn); }
+.fxArchive[data-state="syncing"]:hover + .fxTag::after,
+.fxArchive[data-state="syncing"]:focus-visible + .fxTag::after { content: "STOP?"; color: var(--led-warn); }
+.fxArchive[data-state="offline"]:hover + .fxTag::after,
+.fxArchive[data-state="offline"]:focus-visible + .fxTag::after { content: "SYNC?"; color: var(--led-warn); }
+.fxNeon[data-state="on"]:hover + .fxTag::after,
+.fxNeon[data-state="on"]:focus-visible + .fxTag::after { content: "OFF?"; color: var(--led-warn); }
+.fxNeon[data-state="off"]:hover + .fxTag::after,
+.fxNeon[data-state="off"]:focus-visible + .fxTag::after { content: "ON?"; color: var(--led-warn); }
 
 /* -------------------------------------------------------------- intake -- */
-/* A breaker inline in the portRow: rocker, status LED, streaming flow ticks. */
+/* A breaker inline in the portRow: flow window on the left, a lever arm
+   riding a full-height slot on the right. Open: the arm pokes out the top
+   of the housing, accent, ticks streaming. Closed: it slams out the bottom,
+   goes err, the window dims and stalls. */
 
 .fxIntake {
   position: relative;
-  width: 30px;
-  height: 17px;
+  width: 34px;
+  height: 18px;
   border: 1px solid var(--line);
   border-radius: 4px;
-  background: var(--panel);
+  background:
+    linear-gradient(var(--panel-2), var(--panel-2)) no-repeat right 3px center / 9px 16px,
+    var(--panel);
   box-shadow: var(--shadow);
 }
+/* the flow window: live ticks streaming through a recessed strip */
 .fxIntake::before {
   content: "";
   position: absolute;
   left: 4px;
-  right: 12px;
   top: 6px;
-  height: 4px;
-  border-radius: 2px;
-  background: repeating-linear-gradient(90deg, var(--led) 0 3px, transparent 3px 7px);
+  width: 15px;
+  height: 5px;
+  border-radius: 2.5px;
+  background-color: var(--panel-2);
+  background-image: repeating-linear-gradient(90deg, var(--led) 0 3px, transparent 3px 7px);
   background-size: 14px 100%;
   animation: fx-flow 0.9s linear infinite;
   opacity: 0.9;
 }
+@keyframes fx-flow {
+  to { background-position: 14px 0; }
+}
+/* the lever arm: its grip clears the housing at both ends of the throw */
 .fxIntake::after {
   content: "";
   position: absolute;
   right: 3px;
-  top: 3px;
-  width: 6px;
-  height: 11px;
-  border-radius: 2px;
-  background: linear-gradient(180deg, var(--led) 0 45%, var(--ink-soft) 45% 100%);
-  transition: background 0.2s ease;
+  top: -3px;
+  width: 9px;
+  height: 8px;
+  border-radius: 2.5px;
+  background: var(--accent);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.22), 0 1px 1px rgba(0, 0, 0, 0.25);
+  transition: top var(--fx-snap-t) var(--fx-snap), background 0.15s ease;
 }
-@keyframes fx-flow {
-  to { background-position: 14px 0; }
+.fxIntake[data-state="open"]:hover::after { top: -2px; }
+.fxIntake[data-state="closed"]::after {
+  top: 13px;
+  background: var(--led-err);
 }
+.fxIntake[data-state="closed"]:hover::after { top: 12px; }
 .fxIntake[data-state="closed"]::before {
   animation-play-state: paused;
-  background: repeating-linear-gradient(90deg, var(--led-off) 0 3px, transparent 3px 7px);
+  background-image: repeating-linear-gradient(90deg, var(--led-off) 0 3px, transparent 3px 7px);
   opacity: 0.6;
-}
-.fxIntake[data-state="closed"]::after {
-  background: linear-gradient(180deg, var(--ink-soft) 0 55%, var(--led-err) 55% 100%);
 }
 
 /* -------------------------------------------------------------- pipeline -- */
-/* The deploy console (unchanged cycle) + a proper flip lever you can read
-   from across the room: handle up = RUN, slammed down = HALT. */
+/* The deploy console (unchanged cycle) + a knife switch on its shoulder:
+   blade seated in the jaw = circuit closed = RUN; blade thrown up = HALT. */
 
 .ciConsole {
   position: relative;
@@ -225,51 +303,54 @@ html[data-feed="down"] .fxNeon {
   66%, 100% { opacity: 0; left: 100%; }
 }
 
-/* the flip lever on the console's shoulder */
+/* the knife switch on the console's shoulder: hinge at the left, a dark jaw
+   block at the right where the blade tip seats */
 .fxPipeline {
   position: absolute;
   top: -13px;
   right: 22px;
-  width: 22px;
+  width: 26px;
   height: 22px;
-  background: var(--panel);
+  background:
+    linear-gradient(var(--panel-2), var(--panel-2)) no-repeat right 4px bottom 4px / 5px 9px,
+    var(--panel);
   border: 1px solid var(--line);
   border-radius: 5px;
   box-shadow: var(--shadow);
 }
-/* the handle: a bar with a knob, pivoting at the plate's center */
+/* the blade: pivots at its left end; the accent grip extends past the
+   plate's edge at rest and over the top when thrown, so the silhouette
+   always says "lever" */
 .fxPipeline::before {
   content: "";
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 4px;
-  height: 13px;
-  margin: -11px 0 0 -2px;
+  left: 5px;
+  bottom: 6px;
+  width: 23px;
+  height: 4px;
   border-radius: 2px;
-  background: var(--ink-soft);
-  box-shadow: 0 -1px 0 1.5px var(--accent);
-  transform-origin: 2px 11px;
-  transform: rotate(-32deg);
-  /* self-reversing curve: halt and restore are exact mirrors */
-  transition: transform 0.18s cubic-bezier(0.6, -0.55, 0.4, 1.55), box-shadow 0.2s;
+  background: linear-gradient(90deg, var(--ink-soft) 0 15px, var(--accent) 15px 100%);
+  transform-origin: 2px 2px;
+  transform: rotate(0deg);
+  transition: transform var(--fx-snap-t) var(--fx-snap);
 }
-/* the pivot cap */
+/* the hinge cap, over the blade's pivot */
 .fxPipeline::after {
   content: "";
   position: absolute;
-  left: 50%;
-  top: 50%;
+  left: 4px;
+  bottom: 4px;
   width: 6px;
   height: 6px;
-  margin: -3px 0 0 -3px;
   border-radius: 50%;
   background: var(--line);
 }
+.fxPipeline[data-state="flowing"]:hover::before { transform: rotate(-6deg); }
 .fxPipeline[data-state="jammed"]::before {
-  transform: rotate(38deg);
-  box-shadow: 0 -1px 0 1.5px var(--led-err);
+  transform: rotate(-55deg);
+  background: linear-gradient(90deg, var(--ink-soft) 0 15px, var(--led-err) 15px 100%);
 }
+.fxPipeline[data-state="jammed"]:hover::before { transform: rotate(-49deg); }
 .ciConsole:has(.fxPipeline[data-state="jammed"]) .ciDot,
 .ciConsole:has(.fxPipeline[data-state="jammed"]) .ciPacket {
   animation-play-state: paused;
@@ -291,7 +372,7 @@ html[data-feed="down"] .fxNeon {
 .fxPipeline + .fxTag {
   position: absolute;
   top: -9px;
-  right: 50px;
+  right: 54px;
 }
 @keyframes fx-led-blink {
   50% { opacity: 0.25; }
@@ -353,72 +434,99 @@ html[data-feed="down"] .fxNeon {
 .sysLine[data-tone="you"] { color: var(--accent); }
 
 /* ------------------------------------------------------------------ port -- */
-/* The card's own feed port is the fixture: a plug seated in it. Cut, the
-   plug pops out and dangles on its lead, and the card's screen powers down
-   like a TV switched off at the wall (standby dot included). */
+/* The card is the appliance. Its cord leaves a gland clamped to the card's
+   bottom edge, drops, and plugs into a wall socket floating below the card
+   (the fixture element, hung with position absolute so the card's own box,
+   the terrain, never changes). Cut: the plug is yanked up-and-out in one
+   move and left dangling on its cord beside the bare socket, and the card's
+   screen powers down like a CRT. Reseat: the same move, reversed. */
 
-/* pop and reseat ride ONE self-reversing curve (its cubic-bezier equals its
-   own time-mirror), on every animated property, so off and on are exact
-   reverses of each other instead of two different moves */
-.fxPort::before {
-  content: "";
+.fxPort {
   position: absolute;
-  left: 50%;
-  top: 2px;
-  width: 12px;
-  height: 7px;
-  border-radius: 2px;
-  background: var(--ink-soft);
-  transform: translateX(-50%);
-  transition:
-    transform 0.3s cubic-bezier(0.6, -0.35, 0.4, 1.35),
-    top 0.3s cubic-bezier(0.6, -0.35, 0.4, 1.35);
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+  right: 26px;
+  bottom: -33px;
+  width: 28px;
+  height: 15px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
 }
+/* the state tag hangs beside the socket, off the card like the socket is */
+.fxPort + .fxTag {
+  position: absolute;
+  right: 62px;
+  bottom: -29px;
+  text-align: right;
+}
+/* the socket mouth: a dark opening on the top face; the plug sits over it */
 .fxPort::after {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 100%;
-  width: 2px;
-  height: 5px;
-  background: var(--ink-soft);
-  transform: translateX(-50%);
-  transition: height 0.3s cubic-bezier(0.6, -0.35, 0.4, 1.35);
+  top: 0;
+  width: 14px;
+  height: 6px;
+  margin-left: -7px;
+  border-radius: 0 0 3px 3px;
+  background: var(--screen);
 }
+/* the cord-and-plug: ONE rigid piece, cord (y 0-12) out of the card's
+   bottom border, body (y 12-18), pins (y 18-21) seated in the mouth. Its
+   only motion is a pivot at the exact point the cord leaves the card, so
+   cutting swings the whole thing out sideways in a single arc and leaves
+   it dangling beside the bare socket. Nothing ever overlaps.
+   The pose rides the independent `rotate` property and the hanging sway
+   rides `transform`, composed on top: keyframes never touch the pose, so
+   both flip directions transition smoothly (an animation being removed
+   snaps its property; a transitioned one never does). */
+.fxPort::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: -18px;
+  width: 12px;
+  height: 21px;
+  margin-left: -6px;
+  background:
+    linear-gradient(var(--ink-soft), var(--ink-soft)) no-repeat top center / 2px 12px,
+    linear-gradient(var(--ink-soft), var(--ink-soft)) no-repeat 0 12px / 12px 6px,
+    linear-gradient(90deg, transparent 0 3px, var(--muted) 3px 5px, transparent 5px 7px, var(--muted) 7px 9px, transparent 9px 12px) no-repeat 0 18px / 12px 3px;
+  transform-origin: 6px 0px;
+  rotate: 0deg;
+  transition: rotate var(--fx-snap-t) var(--fx-snap);
+}
+.fxPort[data-state="linked"]:hover::before { rotate: 3deg; }
 .fxPort[data-state="linked"] {
   border-color: color-mix(in srgb, var(--led) 40%, var(--line));
   animation: fxport-breathe 3.6s ease-in-out infinite;
 }
 @keyframes fxport-breathe {
-  0%, 100% { box-shadow: 0 0 0 0 transparent; }
-  50% { box-shadow: 0 0 6px -1px var(--led); }
+  0%, 100% { box-shadow: var(--shadow), 0 0 0 0 transparent; }
+  50% { box-shadow: var(--shadow), 0 0 6px -1px var(--led); }
 }
 .fxPort[data-state="cut"]::before {
-  top: 15px;
-  transform: translateX(-58%) rotate(14deg);
-  animation: fxport-dangle 1.3s ease-in-out infinite alternate;
+  rotate: 42deg;
+  /* the hanging sway starts only after the yank itself has settled */
+  animation: fxport-dangle 1.6s ease-in-out 0.3s infinite alternate;
 }
-.fxPort[data-state="cut"]::after {
-  height: 18px;
-  background: linear-gradient(180deg, var(--ink-soft) 0 55%, transparent 55% 65%, var(--ink-soft) 65% 100%);
-}
+.fxPort[data-state="cut"]:hover::before { rotate: 38deg; }
 .fxPort[data-state="cut"] {
   border-color: var(--led-err);
-  background: var(--screen);
   animation: fxport-err-breathe 2.4s ease-in-out infinite;
 }
 @keyframes fxport-dangle {
-  from { transform: translateX(-62%) rotate(8deg); }
-  to { transform: translateX(-50%) rotate(20deg); }
+  from { transform: rotate(-3deg); }
+  to { transform: rotate(3deg); }
 }
 @keyframes fxport-err-breathe {
-  0%, 100% { box-shadow: 0 0 0 0 transparent; }
-  50% { box-shadow: 0 0 7px -1px var(--led-err); }
+  0%, 100% { box-shadow: var(--shadow), 0 0 0 0 transparent; }
+  50% { box-shadow: var(--shadow), 0 0 7px -1px var(--led-err); }
 }
 
 /* the whole card carries its state: one fixed color per state (green fed,
-   red cut), matching the port button's glow */
+   red cut), matching the port's glow */
 .device:has(.fxPort[data-state="linked"]) {
   border-color: color-mix(in srgb, var(--led) 30%, var(--line));
   box-shadow: var(--shadow), 0 0 16px -7px var(--led);
@@ -428,29 +536,29 @@ html[data-feed="down"] .fxNeon {
   box-shadow: var(--shadow), 0 0 16px -7px var(--led-err);
 }
 
-/* the TV-off: a quick collapse flash, then dark, with a standby dot */
+/* the CRT-off: a breath of brightness, the picture collapses to a light
+   line, the line dies in place. No lingering half-squashed frame. */
 .device:has(.fxPort[data-state="cut"]) .screenGlass img,
 .device:has(.fxPort[data-state="cut"]) .screenIdle {
-  animation: fx-tvoff 0.5s ease-out forwards;
+  animation: fx-tvoff 0.32s cubic-bezier(0.55, 0, 0.85, 0.4) forwards;
 }
 @keyframes fx-tvoff {
   0% { filter: none; transform: none; }
-  30% { filter: brightness(2.4) saturate(0.3); transform: scaleY(0.05); }
-  55% { filter: brightness(0.9); transform: scaleY(0.012); }
-  100% { filter: brightness(0); transform: scaleY(0.008) scaleX(0.55); }
+  38% { filter: brightness(1.7) saturate(0.6); transform: scaleY(0.8); }
+  72% { filter: brightness(5) saturate(0.2); transform: scaleY(0.02); }
+  100% { filter: brightness(0); transform: scaleY(0.02); }
 }
 
-/* ...and the TV-on: the exact time-mirror of the TV-off (mirrored keyframes
-   AND the reversed easing curve, since ease-out played backwards is ease-in).
+/* ...and the CRT-on: the time-mirror (mirrored keyframes, mirrored curve).
    It also plays once on page load, which reads as the machine booting. */
 .device:has(.fxPort[data-state="linked"]) .screenGlass img,
 .device:has(.fxPort[data-state="linked"]) .screenIdle {
-  animation: fx-tvon 0.5s cubic-bezier(0.42, 0, 1, 1);
+  animation: fx-tvon 0.36s cubic-bezier(0.15, 0.6, 0.45, 1);
 }
 @keyframes fx-tvon {
-  0% { filter: brightness(0); transform: scaleY(0.008) scaleX(0.55); }
-  45% { filter: brightness(0.9); transform: scaleY(0.012) scaleX(1); }
-  70% { filter: brightness(2.4) saturate(0.3); transform: scaleY(0.05); }
+  0% { filter: brightness(0); transform: scaleY(0.02); }
+  28% { filter: brightness(5) saturate(0.2); transform: scaleY(0.02); }
+  62% { filter: brightness(1.7) saturate(0.6); transform: scaleY(0.8); }
   100% { filter: none; transform: none; }
 }
 .device:has(.fxPort[data-state="cut"]) .screenGlass {
@@ -478,9 +586,9 @@ html[data-feed="down"] .fxNeon {
 }
 
 /* --------------------------------------------------------------- archive -- */
-/* The archive datastore: a little DB cylinder + a push button. syncing:
-   bands shimmer and streams run into the repo grid. offline: button is
-   depressed, bands still, streams stop. */
+/* The archive datastore: a little DB cylinder + a latching kill button in a
+   bezel ring. syncing: button raised and green, streams run into the repo
+   grid. offline: button latched flush (pressed in, red), streams stop. */
 
 .fxArchive {
   position: relative;
@@ -505,23 +613,31 @@ html[data-feed="down"] .fxNeon {
     repeating-linear-gradient(180deg, var(--ink-soft) 0 4.5px, var(--line) 4.5px 6px);
   opacity: 0.85;
 }
-/* the push button */
+/* the kill button: a bezel ring, a stem it rides down, a travel shadow */
 .fxArchive::after {
   content: "";
   position: absolute;
   right: 6px;
   top: 50%;
-  width: 11px;
-  height: 11px;
-  margin-top: -5.5px;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
   border-radius: 50%;
   background: var(--led);
-  box-shadow: 0 2px 0 0 color-mix(in srgb, var(--ink) 30%, var(--line)), 0 0 6px -1px var(--led);
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--line) 70%, transparent),
+    0 2px 0 0 color-mix(in srgb, var(--ink) 30%, var(--line)),
+    0 0 6px -1px var(--led);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+}
+.fxArchive[data-state="syncing"]:hover::after {
+  transform: translateY(0.5px);
 }
 .fxArchive:active::after {
   transform: translateY(2px);
-  box-shadow: 0 0 0 0 var(--line);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--line) 70%, transparent),
+    inset 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 .fxArchive[data-state="syncing"] {
   border-color: color-mix(in srgb, var(--led) 35%, var(--line));
@@ -529,7 +645,13 @@ html[data-feed="down"] .fxNeon {
 .fxArchive[data-state="offline"]::after {
   background: var(--led-err);
   transform: translateY(2px);
-  box-shadow: 0 0 0 0 var(--line), 0 0 6px -2px var(--led-err);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--line) 70%, transparent),
+    inset 0 1px 2px rgba(0, 0, 0, 0.35),
+    0 0 6px -2px var(--led-err);
+}
+.fxArchive[data-state="offline"]:hover::after {
+  transform: translateY(1.5px);
 }
 .fxArchive[data-state="offline"]::before {
   opacity: 0.35;
@@ -566,7 +688,7 @@ html[data-feed="down"] .fxNeon {
 
 /* ------------------------------------------------------------------ neon -- */
 /* The email IS the neon sign: lit letters on the last of the feed, with a
-   pull lever beside it. Both flips fire a little zap of sparks. */
+   slide lever beside it. Both flips fire a little zap of sparks. */
 
 .neonWrap {
   position: relative;
@@ -606,7 +728,8 @@ html[data-feed="down"] .fxNeon {
   96.8% { opacity: 0.75; }
 }
 
-/* the pull lever: plate + a handle that drops on OFF */
+/* the slide lever: a slot with end caps marking the throw, and a gripped
+   handle that travels between them. Up = ON, down = OFF. */
 .fxNeon {
   position: relative;
   width: 15px;
@@ -617,37 +740,40 @@ html[data-feed="down"] .fxNeon {
   box-shadow: var(--shadow);
   flex: none;
 }
-/* the slot */
+/* the slot: center column plus a cap at each end of the travel */
 .fxNeon::before {
   content: "";
   position: absolute;
-  left: 50%;
-  top: 4px;
-  bottom: 4px;
-  width: 2px;
-  margin-left: -1px;
-  border-radius: 1px;
-  background: var(--line-soft);
+  inset: 3px;
+  background:
+    linear-gradient(var(--line-soft), var(--line-soft)) no-repeat top center / 7px 2px,
+    linear-gradient(var(--line-soft), var(--line-soft)) no-repeat bottom center / 7px 2px,
+    linear-gradient(var(--line-soft), var(--line-soft)) no-repeat center / 2px 100%;
 }
-/* the handle */
+/* the handle: gripped, covers the cap it is parked on */
 .fxNeon::after {
   content: "";
   position: absolute;
   left: 50%;
   top: 4px;
-  width: 8px;
+  width: 9px;
   height: 8px;
-  margin-left: -4px;
-  border-radius: 3px;
-  background: var(--accent);
+  margin-left: -4.5px;
+  border-radius: 2.5px;
+  background:
+    linear-gradient(180deg, transparent 0 2px, rgba(0, 0, 0, 0.25) 2px 3px, transparent 3px 5px, rgba(0, 0, 0, 0.25) 5px 6px, transparent 6px),
+    var(--accent);
   box-shadow: 0 1px 0 0 color-mix(in srgb, var(--ink) 35%, var(--line));
-  /* self-reversing curve: douse and relight are exact mirrors */
-  transition: top 0.16s cubic-bezier(0.6, -0.45, 0.4, 1.45), background 0.16s ease;
+  transition: top var(--fx-snap-t) var(--fx-snap), background 0.15s ease;
 }
+.fxNeon[data-state="on"]:hover::after { top: 5px; }
 .fxNeon[data-state="off"]::after {
   top: 15px;
-  background: var(--ink-soft);
+  background:
+    linear-gradient(180deg, transparent 0 2px, rgba(0, 0, 0, 0.25) 2px 3px, transparent 3px 5px, rgba(0, 0, 0, 0.25) 5px 6px, transparent 6px),
+    var(--ink-soft);
 }
+.fxNeon[data-state="off"]:hover::after { top: 14px; }
 
 /* the zap: a spark burst by the lever on every flip, both directions */
 .neonWrap:has(.fxNeon[data-state="on"])::after,
@@ -705,13 +831,18 @@ html[data-feed="down"] .neonWrap:has(.fxNeon[data-state="on"]) .contactMail {
 
 /* --------------------------------------------------------- reduced motion -- */
 @media (prefers-reduced-motion: reduce) {
-  .fxIntake, .fxPipeline, .fxPort, .fxArchive, .fxNeon,
-  .fxIntake::before,
-  .fxPort::before,
-  .fxArchive::before,
+  /* controls: no ambient pulse, no part travel animation; state flips are
+     instant (transitions off) but land on the same static end poses */
+  .fx,
+  .fx::before,
+  .fx::after,
+  .fxRing {
+    animation: none !important;
+    transition: none !important;
+  }
   .ciDot,
   .ciPacket,
-  .dbLinks,
+  .repoCard::before,
   .neonWrap::after,
   .neonWrap:has(.fxNeon[data-state="on"]) .contactMail,
   .device:has(.fxPort[data-state="cut"]) .screenGlass img,
@@ -727,9 +858,6 @@ html[data-feed="down"] .neonWrap:has(.fxNeon[data-state="on"]) .contactMail {
   .device:has(.fxPort[data-state="cut"]) .screenGlass img {
     filter: brightness(0.12);
     transform: none;
-  }
-  .repoCard::before {
-    animation: none !important;
   }
 }
 
