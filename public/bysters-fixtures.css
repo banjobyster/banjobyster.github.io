@@ -475,7 +475,11 @@ html[data-feed="down"] .fx::after {
    bottom border, body (y 12-18), pins (y 18-21) seated in the mouth. Its
    only motion is a pivot at the exact point the cord leaves the card, so
    cutting swings the whole thing out sideways in a single arc and leaves
-   it dangling beside the bare socket. Nothing ever overlaps. */
+   it dangling beside the bare socket. Nothing ever overlaps.
+   The pose rides the independent `rotate` property and the hanging sway
+   rides `transform`, composed on top: keyframes never touch the pose, so
+   both flip directions transition smoothly (an animation being removed
+   snaps its property; a transitioned one never does). */
 .fxPort::before {
   content: "";
   position: absolute;
@@ -490,9 +494,10 @@ html[data-feed="down"] .fx::after {
     linear-gradient(var(--ink-soft), var(--ink-soft)) no-repeat 0 12px / 12px 6px,
     linear-gradient(90deg, transparent 0 3px, var(--muted) 3px 5px, transparent 5px 7px, var(--muted) 7px 9px, transparent 9px 12px) no-repeat 0 18px / 12px 3px;
   transform-origin: 6px 0px;
-  transition: transform var(--fx-snap-t) var(--fx-snap);
+  rotate: 0deg;
+  transition: rotate var(--fx-snap-t) var(--fx-snap);
 }
-.fxPort[data-state="linked"]:hover::before { transform: rotate(3deg); }
+.fxPort[data-state="linked"]:hover::before { rotate: 3deg; }
 .fxPort[data-state="linked"] {
   border-color: color-mix(in srgb, var(--led) 40%, var(--line));
   animation: fxport-breathe 3.6s ease-in-out infinite;
@@ -502,18 +507,18 @@ html[data-feed="down"] .fx::after {
   50% { box-shadow: var(--shadow), 0 0 6px -1px var(--led); }
 }
 .fxPort[data-state="cut"]::before {
-  transform: rotate(42deg);
+  rotate: 42deg;
   /* the hanging sway starts only after the yank itself has settled */
   animation: fxport-dangle 1.6s ease-in-out 0.3s infinite alternate;
 }
-.fxPort[data-state="cut"]:hover::before { transform: rotate(38deg); }
+.fxPort[data-state="cut"]:hover::before { rotate: 38deg; }
 .fxPort[data-state="cut"] {
   border-color: var(--led-err);
   animation: fxport-err-breathe 2.4s ease-in-out infinite;
 }
 @keyframes fxport-dangle {
-  from { transform: rotate(39deg); }
-  to { transform: rotate(45deg); }
+  from { transform: rotate(-3deg); }
+  to { transform: rotate(3deg); }
 }
 @keyframes fxport-err-breathe {
   0%, 100% { box-shadow: var(--shadow), 0 0 0 0 transparent; }
