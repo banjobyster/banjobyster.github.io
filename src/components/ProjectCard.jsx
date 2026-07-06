@@ -21,20 +21,6 @@ export default function ProjectCard({
       style={{ "--accent": accent }}
       data-walk="top bottom left right"
     >
-      {/* The power link: a junction box on the card's shoulder. Cut it and
-          the device's screen loses signal integrity (glitch + smoke) until
-          the engineer, or you, re-links it. */}
-      <span
-        className="fx fxWire"
-        data-fixture="wire"
-        data-fixture-id={`wire-${unit}`}
-        data-states="linked cut"
-        data-state="linked"
-        data-transitions="linked>cut cut>linked"
-        role="button"
-        tabIndex={0}
-        aria-label={`${title} power link: click to cut or restore`}
-      />
       <a
         className="deviceScreen"
         href={link}
@@ -61,7 +47,21 @@ export default function ProjectCard({
             <i />
             <i />
           </span>
-          <span className="devicePort" aria-hidden="true" />
+          {/* The card's feed port IS the fixture: pop the plug and this
+              device loses its signal until someone reseats it. */}
+          <span
+            className="devicePort fx fxPort"
+            data-fixture="port"
+            data-fixture-id={`port-${unit}`}
+            data-states="linked cut"
+            data-state="linked"
+            data-transitions="linked>cut cut>linked"
+            role="button"
+            tabIndex={0}
+            aria-label={`${title} feed port: click to pop or reseat the plug`}
+            style={{ "--pulse": index + 2 }}
+          />
+          <i className="fxTag mono" aria-hidden="true" />
         </div>
         <h3 className="deviceTitle">
           <a href={link} target="_blank" rel="noreferrer">

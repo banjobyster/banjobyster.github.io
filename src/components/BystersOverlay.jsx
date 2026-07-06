@@ -25,12 +25,21 @@ const CABLE_COLOR = {
   nib: 0xe8b64a,
 };
 
+// The work cable creeps OUT of the byster toward the fixture (rather than
+// popping in fully formed), so plugging in reads as an act. Progress is
+// per-byster and eases back to zero on unplug.
+const plugT = new Map();
+
 function drawCables(gCable, { cast, store }) {
   if (!store) return;
   gCable.clear();
   for (const m of cast) {
     const act = m.byster && m.byster.actuator;
-    if (!act || !act.plugged || act.fixtureId == null) continue;
+    const plugged = act && act.plugged && act.fixtureId != null;
+    const t0 = plugT.get(m.name) || 0;
+    const t = Math.max(0, Math.min(1, t0 + (plugged ? 0.022 : -0.08)));
+    plugT.set(m.name, t);
+    if (t <= 0 || !act || act.fixtureId == null) continue;
     const fx = store.fixture(act.fixtureId);
     if (!fx) continue;
     const cx = m.mover.x;
@@ -38,11 +47,56 @@ function drawCables(gCable, { cast, store }) {
     const mx = (cx + fx.x) / 2;
     const my = Math.max(cy, fx.y) + 14;
     const color = CABLE_COLOR[m.name] || 0xffffff;
+    // draw the quadratic arc only up to parameter t
     gCable.moveTo(cx, cy);
-    gCable.quadraticCurveTo(mx, my, fx.x, fx.y);
+    const STEPS = 16;
+    let ex = cx;
+    let ey = cy;
+    for (let i = 1; i <= STEPS; i++) {
+      const u = (t * i) / STEPS;
+      const a = 1 - u;
+      ex = a * a * cx + 2 * a * u * mx + u * u * fx.x;
+      ey = a * a * cy + 2 * a * u * my + u * u * fx.y;
+      gCable.lineTo(ex, ey);
+    }
     gCable.stroke({ width: 2, color, alpha: 0.8 });
-    gCable.circle(fx.x, fx.y, 3).fill({ color, alpha: 0.9 });
+    // the free end: a small connector nub while traveling, seated when t=1
+    gCable.circle(ex, ey, t >= 1 ? 3 : 2).fill({ color, alpha: 0.9 });
   }
+}
+
+// The system log: translate the fixture store's audit log into the page's
+// own voice. All meaning (verbs, names) lives here, not in the framework.
+const FX_LABEL = (fx) =>
+  fx.type === "port" ? "PRJ " + (fx.id.split("-")[1] || "??") + " PORT"
+  : fx.type === "intake" ? "INTAKE"
+  : fx.type === "pipeline" ? "PIPELINE"
+  : fx.type === "archive" ? "ARCHIVE"
+  : fx.type === "neon" ? "NEON SIGN"
+  : fx.type.toUpperCase();
+const VERB = {
+  cut: "POPPED", linked: "RESEATED",
+  jammed: "JAMMED", flowing: "RESTORED",
+  closed: "SHUT", open: "REOPENED",
+  off: "DOUSED", on: "RELIT",
+  offline: "KNOCKED OUT", syncing: "RESYNCED",
+};
+let sysLogSeen = -1;
+
+function drawSysLog(store) {
+  if (!store || store.log.length === sysLogSeen) return;
+  sysLogSeen = store.log.length;
+  const slots = document.querySelectorAll("#sys-log .sysLine");
+  if (!slots.length) return;
+  const tail = store.log.slice(-slots.length);
+  slots.forEach((el, i) => {
+    const l = tail[i];
+    if (!l) return;
+    const fx = store.fixture(l.id);
+    const who = l.by ? l.by.toUpperCase() : "YOU";
+    el.textContent = `${who} ${VERB[l.to] || l.to.toUpperCase()} ${fx ? FX_LABEL(fx) : l.id}`;
+    el.dataset.tone = l.by == null ? "you" : l.by;
+  });
 }
 
 function drawDebug(gDebug, { graph, cast }) {
@@ -112,11 +166,24 @@ export default function BystersOverlay({ dataReady }) {
       shadow: false,
       debug: debugOn,
       onFrame: (f) => {
+        // The feed cascade: while the intake is closed the whole machine
+        // browns out. One root cause, mirrored to html[data-feed] so CSS can
+        // starve everything downstream. Store-driven, so byster and human
+        // closures behave identically; checked per frame because rebuilds
+        // replace the store.
+        const intake = f.store && f.store.all().find((x) => x.type === "intake");
+        const down = !!intake && intake.state === "closed";
+        const root = document.documentElement;
+        if (down !== (root.dataset.feed === "down")) {
+          if (down) root.dataset.feed = "down";
+          else delete root.dataset.feed;
+        }
         if (!gCable) {
           gCable = new Graphics();
           f.app.stage.addChildAt(gCable, 0);
         }
         drawCables(gCable, f);
+        drawSysLog(f.store);
         if (debugOn) {
           if (!gDebug) {
             gDebug = new Graphics();

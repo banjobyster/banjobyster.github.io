@@ -1,6 +1,9 @@
 // The twins, Kip and Pip: two tiny handheld-TV toddlers, one warm, one cool.
 // Same body, mirrored souls: a factory builds both so the geometry stays
-// literally identical and only palette + accessory + face dialect differ.
+// literally identical and only palette + accessory differ. They are the
+// smallest walkers on the page (knee-high to Chunk), so the face grid is
+// deliberately COARSE: 12x9 pixels on the same screen area means every
+// expression pixel is big and readable at their size.
 //
 // A character is plain data for the renderer: params (proportions + motion
 // tuning), palette (with pix: the 4-level face palette [off, dim, main, hot]),
@@ -8,93 +11,91 @@
 // buildHead(g) -> faceBox, optional buildHeadGloss(g, faceBox).
 
 const PARAMS = {
-  scale: 1.0,
-  bodyW: 20,
-  bodyH: 12,
-  headW: 44,
-  headH: 36,
-  hipX: [8, 4.5, -4.5, -8],
-  hipY: 6,
-  footRestX: [10, 5, -5, -10],
-  standH: 18,
-  stepThresholdBase: 9, // quick little toddler steps
-  walkSpeed: 200,
-  wanderSpeed: 120,
+  scale: 0.75,
+  bodyW: 14,
+  bodyH: 8,
+  headW: 30,
+  headH: 26,
+  hipX: [6, 3.5, -3.5, -6],
+  hipY: 4.5,
+  footRestX: [7.5, 4, -4, -7.5],
+  standH: 13,
+  stepThresholdBase: 7, // quick little toddler steps
+  walkSpeed: 185,
+  wanderSpeed: 110,
   accel: 1400, // zippy starts and stops
   bodySpring: 260, // under-damped: lands with a bouncy squash
   bodyDamp: 13,
   rotSpring: 220,
   rotDamp: 14,
+  headMass: 0.55,
   leanGain: 0.0005,
   leanMax: 0.09,
-  headMass: 0.6,
 };
 
-// Shared face dialect: big round eyes, everything oversized and readable.
+// Shared face dialect on a coarse 12x9 grid: everything oversized.
 const FACES = {
   idle(f) {
-    f.eye(3, 3, 4, 5, true);
-    f.eye(9, 3, 4, 5, true);
-    f.block(7, 9, 2, 1, 1);
+    f.eye(2, 2, 3, 4, true);
+    f.eye(7, 2, 3, 4, true);
+    f.block(5, 7, 2, 1, 1);
   },
   curious(f) {
-    f.eye(2, 2, 5, 6, true);
-    f.eye(10, 4, 3, 4, true);
-    f.px(7, 9, 2);
-    f.px(8, 10, 2);
+    f.eye(1, 1, 4, 5, true);
+    f.eye(7, 3, 3, 3, true);
+    f.px(5, 7, 2);
+    f.px(6, 8, 2);
   },
   happy(f) {
-    for (const c of [3, 9]) {
-      f.px(c, 5, 2);
-      f.px(c + 1, 4, 3);
-      f.px(c + 2, 4, 3);
-      f.px(c + 3, 5, 2);
+    for (const c of [2, 7]) {
+      f.px(c, 4, 2);
+      f.px(c + 1, 3, 3);
+      f.px(c + 2, 4, 2);
     }
-    f.px(5, 8, 2);
-    f.block(6, 9, 4, 1, 3);
-    f.px(10, 8, 2);
+    f.px(3, 6, 2);
+    f.block(4, 7, 4, 1, 3);
+    f.px(8, 6, 2);
   },
   grin(f) {
-    f.eye(3, 3, 4, 4, true);
-    f.eye(9, 3, 4, 4, true);
-    f.block(4, 8, 8, 1, 2);
-    f.block(5, 9, 6, 1, 3);
+    f.eye(2, 2, 3, 3, true);
+    f.eye(7, 2, 3, 3, true);
+    f.block(3, 6, 6, 1, 2);
+    f.block(4, 7, 4, 1, 3);
   },
   excited(f) {
-    // Bouncing eyes plus a wide open mouth: the whole face vibrates.
+    // Bouncing chevron eyes over a wide open mouth; corners twinkle.
     const b = Math.sin(f.t * 11) > 0 ? 1 : 0;
-    for (const c of [3, 9]) {
-      f.px(c, 5 - b, 2);
-      f.px(c + 1, 4 - b, 3);
-      f.px(c + 2, 4 - b, 3);
-      f.px(c + 3, 5 - b, 2);
+    for (const c of [2, 7]) {
+      f.px(c, 4 - b, 2);
+      f.px(c + 1, 3 - b, 3);
+      f.px(c + 2, 4 - b, 2);
     }
-    f.block(6, 8, 4, 3, 2);
-    f.block(7, 9, 2, 1, 3);
+    f.block(4, 6, 4, 2, 2);
+    f.block(5, 6, 2, 1, 3);
     const tw = ((f.t * 7) | 0) % 2;
-    f.px(1, 1, tw ? 3 : 1);
-    f.px(14, 3, tw ? 1 : 3);
+    f.px(0, 0, tw ? 3 : 1);
+    f.px(11, 2, tw ? 1 : 3);
   },
   sad(f) {
-    // Downturned lids and a wobbly small mouth.
-    f.block(3, 4, 4, 2, 1);
-    f.px(3, 3, 2);
-    f.block(9, 4, 4, 2, 1);
-    f.px(12, 3, 2);
-    f.px(6, 10, 2);
-    f.block(7, 9, 2, 1, 2);
-    f.px(9, 10, 2);
+    // Outer-drooping lids, a small wobbly mouth.
+    f.px(2, 2, 2);
+    f.block(2, 3, 3, 1, 1);
+    f.px(9, 2, 2);
+    f.block(7, 3, 3, 1, 1);
+    f.px(4, 8, 2);
+    f.block(5, 7, 2, 1, 2);
+    f.px(7, 8, 2);
   },
   cry(f) {
-    // Squeezed-shut eyes, a wailing mouth, and big tears that fall.
-    f.block(3, 4, 4, 1, 2);
-    f.block(9, 4, 4, 1, 2);
+    // Squeezed-shut eyes, a wailing mouth, big tears that fall.
+    f.block(2, 3, 3, 1, 2);
+    f.block(7, 3, 3, 1, 2);
     const drop = ((f.t * 6) | 0) % 4;
-    f.px(3, 5 + drop, 3);
-    f.px(12, 5 + ((drop + 2) % 4), 3);
-    f.block(6, 8, 4, 2, 2);
+    f.px(2, 4 + drop, 3);
+    f.px(9, 4 + ((drop + 2) % 4), 3);
     const wob = ((f.t * 9) | 0) % 2;
-    f.block(6 + wob, 9, 3, 1, 3);
+    f.block(4, 6, 4, 2, 2);
+    f.block(4 + wob, 7, 3, 1, 3);
   },
   dizzy(f) {
     const ORBIT = [
@@ -105,54 +106,52 @@ const FACES = {
     ];
     const k = (f.t * 8) | 0;
     for (const [c, off] of [
-      [3, 0],
-      [9, 2],
+      [2, 0],
+      [7, 2],
     ]) {
-      f.block(c, 3, 4, 4, 1);
+      f.block(c, 2, 3, 3, 1);
       const [ox, oy] = ORBIT[(k + off) % 4];
-      f.px(c + 1 + ox, 3 + oy, 3);
+      f.px(c + ox, 2 + oy, 3);
     }
-    for (let x = 5; x <= 10; x++) f.px(x, 9 + ((x + k) % 2), 1);
+    for (let x = 3; x <= 8; x++) f.px(x, 7 + ((x + k) % 2), 1);
   },
   panic(f) {
-    // Tiny pupils in huge whites, mouth a quivering o, static at the edges.
-    for (const c of [2, 9]) {
-      f.block(c, 2, 5, 6, 1);
-      f.px(c + 2, 4, 3);
+    // Tiny pupils in huge whites, a quivering o mouth.
+    for (const c of [1, 7]) {
+      f.block(c, 1, 4, 4, 1);
+      f.px(c + 1, 2, 3);
     }
     const j = ((f.t * 13) | 0) % 2;
-    f.block(6 + j, 9, 3, 2, 2);
-    f.px(0, 5, j ? 2 : 0);
-    f.px(15, 7, j ? 0 : 2);
+    f.block(4 + j, 6, 3, 2, 2);
   },
   peek(f) {
     // Eyes squeezed to one side, watching without watching.
-    f.block(2, 4, 3, 3, 1);
-    f.px(2, 5, 3);
-    f.block(8, 4, 3, 3, 1);
-    f.px(8, 5, 3);
-    f.px(6, 9, 1);
+    f.block(1, 3, 3, 2, 1);
+    f.px(1, 4, 3);
+    f.block(6, 3, 3, 2, 1);
+    f.px(6, 4, 3);
+    f.px(5, 7, 1);
   },
   grit(f) {
     // Playing at being the engineer: brows down, mouth set, very serious.
+    f.px(1, 1, 2);
     f.px(2, 2, 2);
-    f.px(3, 3, 2);
-    f.px(12, 2, 2);
-    f.px(11, 3, 2);
-    f.block(3, 4, 3, 2, 2);
-    f.block(10, 4, 3, 2, 2);
-    f.block(5, 9, 6, 1, 2);
+    f.px(10, 1, 2);
+    f.px(9, 2, 2);
+    f.block(2, 3, 3, 1, 2);
+    f.block(7, 3, 3, 1, 2);
+    f.block(4, 7, 4, 1, 2);
   },
   focus(f) {
     // Playing at being the operator: a little scanning blip, chin up.
-    const c = Math.round((Math.sin(f.t * 4) * 0.5 + 0.5) * (f.w - 4));
-    f.block(c, 3, 3, 3, 2);
-    f.px(c + 1, 4, 3);
-    f.block(6, 9, 4, 1, 1);
+    const c = Math.round((Math.sin(f.t * 4) * 0.5 + 0.5) * (f.w - 3));
+    f.block(c, 2, 3, 2, 2);
+    f.px(c + 1, 3, 3);
+    f.block(4, 7, 4, 1, 1);
   },
   sleepy(f) {
-    f.block(3, 5, 4, 2, 1);
-    f.block(9, 5, 4, 2, 1);
+    f.block(2, 4, 3, 1, 1);
+    f.block(7, 4, 3, 1, 1);
   },
 };
 
@@ -163,12 +162,12 @@ function makeTwin(name, col, accessory) {
     palette: col,
     legs: {
       rings: 3,
-      near: { core: col.legCore, ring: col.legRing, width: 4.6 },
-      far: { core: col.legCoreFar, ring: col.legRingFar, width: 4 },
+      near: { core: col.legCore, ring: col.legRing, width: 3.8 },
+      far: { core: col.legCoreFar, ring: col.legRingFar, width: 3.3 },
     },
     face: {
-      w: 16,
-      h: 12,
+      w: 12,
+      h: 9,
       animated: ['excited', 'cry', 'dizzy', 'panic', 'focus'],
       exprs: FACES,
     },
@@ -176,9 +175,9 @@ function makeTwin(name, col, accessory) {
     // Chest: a tiny rounded pack with a carry-handle detail.
     buildBody(g) {
       const P = PARAMS;
-      g.roundRect(-P.bodyW / 2, -P.bodyH / 2, P.bodyW, P.bodyH, 5).fill(col.chest);
-      g.roundRect(-P.bodyW / 2 + 2.4, -P.bodyH / 2 + 1.2, P.bodyW - 4.8, 3.4, 2).fill(col.chestHi);
-      g.roundRect(-3.5, -1, 7, 4, 1.5).fill(col.chestDark);
+      g.roundRect(-P.bodyW / 2, -P.bodyH / 2, P.bodyW, P.bodyH, 3.5).fill(col.chest);
+      g.roundRect(-P.bodyW / 2 + 1.8, -P.bodyH / 2 + 1, P.bodyW - 3.6, 2.4, 1.4).fill(col.chestHi);
+      g.roundRect(-2.4, -0.6, 4.8, 2.8, 1).fill(col.chestDark);
     },
 
     // Head: a rounded handheld TV. The accessory tells the twins apart at a
@@ -187,23 +186,23 @@ function makeTwin(name, col, accessory) {
       const w = PARAMS.headW;
       const h = PARAMS.headH;
       if (accessory === 'bobble') {
-        g.rect(-1.2, -h / 2 - 8, 2.4, 9).fill(col.bezelShade);
-        g.circle(0, -h / 2 - 9, 3.4).fill(col.chest);
+        g.rect(-0.9, -h / 2 - 6, 1.8, 7).fill(col.bezelShade);
+        g.circle(0, -h / 2 - 6.8, 2.6).fill(col.chest);
       } else {
-        g.rect(-8.5, -h / 2 - 7.5, 2.2, 9).fill(col.bezelShade);
-        g.rect(6.3, -h / 2 - 7.5, 2.2, 9).fill(col.bezelShade);
-        g.circle(-7.4, -h / 2 - 8, 2.2).fill(col.chest);
-        g.circle(7.4, -h / 2 - 8, 2.2).fill(col.chest);
+        g.rect(-6, -h / 2 - 5.5, 1.7, 7).fill(col.bezelShade);
+        g.rect(4.3, -h / 2 - 5.5, 1.7, 7).fill(col.bezelShade);
+        g.circle(-5.2, -h / 2 - 6, 1.7).fill(col.chest);
+        g.circle(5.2, -h / 2 - 6, 1.7).fill(col.chest);
       }
-      g.roundRect(-w / 2 + 1.4, -h / 2 + 2, w, h, 12).fill(col.bezelShade);
-      g.roundRect(-w / 2, -h / 2, w, h, 12).fill(col.bezel);
-      g.roundRect(-w / 2 + 4.5, -h / 2 + 3.8, w - 9, h - 10, 7).fill(col.screenFrame);
-      g.roundRect(-w / 2 + 6, -h / 2 + 5.2, w - 12, h - 12.8, 5).fill(col.screen);
-      g.circle(w / 2 - 7, h / 2 - 3.6, 1.5).fill(col.bezelShade);
-      g.circle(-w / 2 + 7, h / 2 - 3.6, 1.5).fill(col.chest);
-      const sw = w - 12;
-      const sh = h - 12.8;
-      return { x: -sw / 2, y: -h / 2 + 5.2, w: sw, h: sh };
+      g.roundRect(-w / 2 + 1.1, -h / 2 + 1.5, w, h, 9).fill(col.bezelShade);
+      g.roundRect(-w / 2, -h / 2, w, h, 9).fill(col.bezel);
+      g.roundRect(-w / 2 + 3, -h / 2 + 2.6, w - 6, h - 6.8, 5).fill(col.screenFrame);
+      g.roundRect(-w / 2 + 4, -h / 2 + 3.6, w - 8, h - 8.8, 4).fill(col.screen);
+      g.circle(w / 2 - 4.6, h / 2 - 2.4, 1.1).fill(col.bezelShade);
+      g.circle(-w / 2 + 4.6, h / 2 - 2.4, 1.1).fill(col.chest);
+      const sw = w - 8;
+      const sh = h - 8.8;
+      return { x: -sw / 2, y: -h / 2 + 3.6, w: sw, h: sh };
     },
 
     buildHeadGloss(g, box) {

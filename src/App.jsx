@@ -69,6 +69,22 @@ function App() {
             <i />
           </span>
           <span className="portLabel mono">PORT DATA-01</span>
+          {/* The intake valve: the head of the whole machine. Close it and
+              the feed dies page-wide (pipeline starves, ports dim, the neon
+              browns out) until the operator, or you, reopens it. */}
+          <span
+            className="fx fxIntake"
+            data-fixture="intake"
+            data-fixture-id="intake-main"
+            data-states="open closed"
+            data-state="open"
+            data-transitions="open>closed closed>open"
+            role="button"
+            tabIndex={0}
+            aria-label="data intake: click to close or open the feed"
+            style={{ "--pulse": 0 }}
+          />
+          <i className="fxTag mono" aria-hidden="true" />
           <span className="portRule" aria-hidden="true" />
           <span className={`stamp mono stamp-${state}`} role="status">
             <i className="stampLed" aria-hidden="true" />
@@ -113,8 +129,21 @@ function App() {
             data-transitions="flowing>jammed jammed>flowing"
             role="button"
             tabIndex={0}
-            aria-label="deploy pipeline: click to jam or restore"
+            aria-label="deploy pipeline: flip the lever to halt or run"
+            style={{ "--pulse": 1 }}
           />
+          <i className="fxTag mono" aria-hidden="true" />
+        </div>
+
+        {/* The system log: the machine narrating itself. The overlay writes
+            the last few fixture-store transitions here (who broke what, who
+            fixed it), so the story is readable even before you spot a
+            byster. Static boot line when the society cannot mount. */}
+        <div className="sysLog" id="sys-log" aria-hidden="true">
+          <span className="sysHead mono">SYS LOG</span>
+          <span className="sysLine mono" data-slot="0">BOOT OK · ALL STATIONS NOMINAL</span>
+          <span className="sysLine mono" data-slot="1" />
+          <span className="sysLine mono" data-slot="2" />
         </div>
 
         <a className="scrollCue mono" href="#featured">
@@ -148,7 +177,24 @@ function App() {
         <div className="hatch">
           <span className="hatchGrille" aria-hidden="true" />
           <span className="hatchLabel mono">EXT STORAGE</span>
+          {/* The archive datastore: every repo syncs to this node. Push the
+              button to knock it offline; the engineer brings it back. */}
+          <span
+            className="fx fxArchive"
+            data-fixture="archive"
+            data-fixture-id="archive-main"
+            data-states="syncing offline"
+            data-state="syncing"
+            data-transitions="syncing>offline offline>syncing"
+            role="button"
+            tabIndex={0}
+            aria-label="archive datastore: push to knock offline or resync"
+            style={{ "--pulse": 12 }}
+          />
+          <i className="fxTag mono" aria-hidden="true" />
         </div>
+        {/* the sync streams from the datastore down into the repo grid */}
+        <span className="dbLinks" aria-hidden="true" />
         <div className="repoGrid" data-state={state}>
           {state === "loading" &&
             [0, 1, 2, 3].map((i) => (
@@ -204,18 +250,11 @@ function App() {
           <span className="headRule" aria-hidden="true" />
         </h2>
         <div className="contactBody" data-walk>
-          <a className="contactMail" href={`mailto:${EMAIL}`}>
-            {EMAIL}
-          </a>
-          {/* The contact neon: a tube that frames the links. Nib relights it
-              when it goes dark; switching it off is the visitor's job. */}
-          <div className="contactLinks neonWrap">
-            <span className="neonTube" aria-hidden="true" />
-            <a href={LINKS.github} target="_blank" rel="noreferrer">
-              <IconGitHub /> GITHUB
-            </a>
-            <a href={LINKS.linkedin} target="_blank" rel="noreferrer">
-              <IconLinkedIn /> LINKEDIN
+          {/* The contact neon: the email IS the sign, lit by the last of the
+              feed. The pull lever douses it; Nib (or you) relights it. */}
+          <div className="neonWrap">
+            <a className="contactMail" href={`mailto:${EMAIL}`}>
+              {EMAIL}
             </a>
             <span
               className="fx fxNeon"
@@ -226,8 +265,18 @@ function App() {
               data-transitions="on>off off>on"
               role="button"
               tabIndex={0}
-              aria-label="contact neon: click to switch"
+              aria-label="contact sign: pull the lever to douse or relight"
+              style={{ "--pulse": 13 }}
             />
+            <i className="fxTag mono" aria-hidden="true" />
+          </div>
+          <div className="contactLinks">
+            <a href={LINKS.github} target="_blank" rel="noreferrer">
+              <IconGitHub /> GITHUB
+            </a>
+            <a href={LINKS.linkedin} target="_blank" rel="noreferrer">
+              <IconLinkedIn /> LINKEDIN
+            </a>
           </div>
         </div>
 
