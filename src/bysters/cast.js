@@ -164,6 +164,17 @@ function territory(homeSel, { every = 12, dwell = 4, face = "idle", priority = 3
   });
 }
 
+// What a byster's screen shows right now. Behaviors sense each other through
+// world views, but a face is pure presentation, and consumer land owns both
+// sides, so the impression reads it straight off the mounted cast (the same
+// handle the overlay publishes). Null when nothing is mounted (degraded or
+// headless), and the impression falls back to its signature act.
+function liveFace(name) {
+  const soc = typeof window !== "undefined" ? window.__society : null;
+  const m = soc && soc.byName ? soc.byName(name) : null;
+  return m && m.mover && m.mover.face ? m.mover.face.expr : null;
+}
+
 // --- mimicry, made legible ---------------------------------------------------
 // A twin picks a grown-up, treks over, and falls in step BESIDE it: a
 // copycat face, the adult's pace, eyes locked on the model. approach +
@@ -175,13 +186,14 @@ function territory(homeSel, { every = 12, dwell = 4, face = "idle", priority = 3
 // through its model), landing the copycat NEXT to its idol, never
 // underneath it: model and mini stay side by side where the impression can
 // actually be seen.
-// The impression tracks the model's MOMENT, not a frozen caricature:
-// `moment(world, model)` names the face for what the model is visibly doing
-// right now, from what a twin can legitimately sense (broadcast tags, the
-// machine's state), so a resting Chunk gets a flopped-down copy beside him,
-// not an angry one. Stance follows for free: a stopped model stops the
-// trek's goal, so the mini idles beside it.
-function mimic(adult, { moment, pace: paceMul, beside = 150, gap = 110, priority = 72 } = {}) {
+// The impression copies what the model's screen ACTUALLY shows right now:
+// `act` translates the model's live expression into the twin's own face
+// dialect frame by frame (grit becomes the brow-slash scowl, a rest-break
+// wipe becomes a flopped-down nap, an alarm becomes wide-eyed panic), with
+// `fallback` for anything untranslated, so the copy never lags behind or
+// contradicts the model. Stance follows for free: a stopped model stops
+// the trek's goal, so the mini idles beside it.
+function mimic(adult, { act = {}, fallback, pace: paceMul, beside = 150, gap = 110, priority = 72 } = {}) {
   const trek = approach((v) => v.name === adult, { notice: Infinity, face: "curious", priority });
   const copy = reactTo((v) => v.name === adult, { radius: beside, pace: paceMul, gaze: true, priority });
   const faces = {}; // face name -> a mood() that bids it, created on demand
@@ -224,7 +236,7 @@ function mimic(adult, { moment, pace: paceMul, beside = 150, gap = 110, priority
         return null;
       }
       const model = ape ? world.bysters.nearestMatching(self, (v) => v.name === adult, beside) : null;
-      const impression = model ? faceBid(moment(world, model), world, self) : null;
+      const impression = model ? faceBid(act[liveFace(adult)] || fallback, world, self) : null;
       return { ...(go || {}), ...(ape || {}), ...(impression || {}) };
     },
   };
@@ -357,20 +369,29 @@ function twin({ name, character, other, bold }) {
         : [fleeCursor({ radius: 130, face: "peek", speed: 1.4 }), avoidCursorGaze()]),
 
       // -- mimicry: idolize the grown-ups. Trek over, fall in step, and APE
-      //    what they are doing right now: Chunk's brow-slash scowl at a
-      //    heavy crawl (or a flopped-down nap when he is resting), Otto's
-      //    gauge-and-graph dashboard at a conductor's stride (or wide-eyed
-      //    panic while he is alarming), eyes pinned on the model the whole
-      //    time. Windows are long so an episode reads as a scene, not a
-      //    flicker, and while it runs the twin even forgets to be scared of
-      //    the engineer (priority above the guilt flee) --
+      //    whatever face the model wears RIGHT NOW, translated into the
+      //    twin's own dialect: Chunk's grit becomes the brow-slash scowl at
+      //    a heavy crawl, his rest-break wipe a flopped-down nap, Otto's
+      //    alarm wide-eyed panic, his tada a burst of excitement, eyes
+      //    pinned on the model the whole time. Windows are long so an
+      //    episode reads as a scene, not a flicker, and while it runs the
+      //    twin even forgets to be scared of the engineer (priority above
+      //    the guilt flee) --
       sometimes(
-        mimic("chunk", { pace: 0.42, moment: (w, model) => (model.tags.has("resting") ? "sleepy" : "mimicChunk") }),
+        mimic("chunk", {
+          pace: 0.42,
+          fallback: "mimicChunk",
+          act: { grit: "mimicChunk", wipe: "sleepy", sleepy: "sleepy", sigh: "sad", squint: "peek", happy: "happy", curious: "curious" },
+        }),
         0.4,
         { window: bold ? 15 : 17 },
       ),
       sometimes(
-        mimic("otto", { pace: 1.25, moment: (w) => (w.fixtures && w.fixtures.all().some(isBroken) ? "panic" : "mimicOtto") }),
+        mimic("otto", {
+          pace: 1.25,
+          fallback: "mimicOtto",
+          act: { alarm: "panic", tada: "excited", happy: "happy", curious: "curious", sleepy: "sleepy" },
+        }),
         0.4,
         { window: bold ? 19 : 23 },
       ),

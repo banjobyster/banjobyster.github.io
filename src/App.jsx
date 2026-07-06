@@ -238,7 +238,7 @@ function App() {
             up under load.
           </p>
           <p>
-            Outside of work I love competitive programming; I had a good run
+            Outside of work I love competitive programming. I had a good run
             near the top of the global leaderboards back when I competed
             actively, and the habits it drilled in still shape how I write
             code. The rest of my free time goes into building things to see

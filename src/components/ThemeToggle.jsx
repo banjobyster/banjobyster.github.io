@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { IconSun, IconMoon } from "./Icons";
 
 const THEME_COLORS = { light: "#e9e5da", dark: "#201d17" };
 
@@ -54,7 +55,7 @@ export default function ThemeToggle() {
       onClick={toggle}
       aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
     >
-      <span aria-hidden="true">{theme === "light" ? "☀️" : "🌙"}</span>
+      {theme === "light" ? <IconSun /> : <IconMoon />}
     </button>
   );
 }

@@ -121,11 +121,7 @@
   border-color: var(--muted);
 }
 
-.themeToggle span {
-  font-size: 13px;
-  line-height: 1;
-}
-
+.themeToggle svg,
 .navLink svg {
   width: 14px;
   height: 14px;

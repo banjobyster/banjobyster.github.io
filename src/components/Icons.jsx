@@ -65,6 +65,38 @@ export function IconArrowDown(props) {
   );
 }
 
+export function IconSun(props) {
+  return (
+    <svg
+      {...base}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      {...props}
+    >
+      <circle cx="12" cy="12" r="4.4" />
+      <path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7" />
+    </svg>
+  );
+}
+
+export function IconMoon(props) {
+  return (
+    <svg
+      {...base}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M20.2 14.2A8.2 8.2 0 0 1 9.8 3.8a8.2 8.2 0 1 0 10.4 10.4Z" />
+    </svg>
+  );
+}
+
 export function IconByster(props) {
   // The blue byster from the library demo, shrunk to a glyph: rounded TV
   // head, lit pixel eyes, two accordion legs. Fixed palette on purpose; it
