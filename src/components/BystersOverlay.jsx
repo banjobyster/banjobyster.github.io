@@ -81,6 +81,13 @@ const VERB = {
   off: "DOUSED", on: "RELIT",
   offline: "KNOCKED OUT", syncing: "RESYNCED",
 };
+// The boot report the terminal shows before anything happens; live events
+// scroll it away line by line, terminal-style (earliest at the top).
+const BOOT = [
+  { text: "BOOT OK · ALL STATIONS NOMINAL", tone: null },
+  { text: "INTAKE OPEN · FEED LIVE", tone: null },
+  { text: "PIPELINE RUN · ARCHIVE SYNC · NEON ON", tone: null },
+];
 let sysLogSeen = -1;
 
 function drawSysLog(store) {
@@ -88,14 +95,19 @@ function drawSysLog(store) {
   sysLogSeen = store.log.length;
   const slots = document.querySelectorAll("#sys-log .sysLine");
   if (!slots.length) return;
-  const tail = store.log.slice(-slots.length);
-  slots.forEach((el, i) => {
-    const l = tail[i];
-    if (!l) return;
+  const events = store.log.map((l) => {
     const fx = store.fixture(l.id);
     const who = l.by ? l.by.toUpperCase() : "YOU";
-    el.textContent = `${who} ${VERB[l.to] || l.to.toUpperCase()} ${fx ? FX_LABEL(fx) : l.id}`;
-    el.dataset.tone = l.by == null ? "you" : l.by;
+    return { text: `${who} ${VERB[l.to] || l.to.toUpperCase()} ${fx ? FX_LABEL(fx) : l.id}`, tone: l.by == null ? "you" : l.by };
+  });
+  const lines = [...BOOT, ...events].slice(-slots.length);
+  slots.forEach((el, i) => {
+    const l = lines[i];
+    el.textContent = l ? l.text : "";
+    if (l && l.tone) el.dataset.tone = l.tone;
+    else delete el.dataset.tone;
+    if (i === lines.length - 1) el.dataset.cursor = "1";
+    else delete el.dataset.cursor;
   });
 }
 

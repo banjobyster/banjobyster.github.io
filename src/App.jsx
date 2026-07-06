@@ -142,8 +142,13 @@ function App() {
         <div className="sysLog" id="sys-log" aria-hidden="true">
           <span className="sysHead mono">SYS LOG</span>
           <span className="sysLine mono" data-slot="0">BOOT OK · ALL STATIONS NOMINAL</span>
-          <span className="sysLine mono" data-slot="1" />
-          <span className="sysLine mono" data-slot="2" />
+          <span className="sysLine mono" data-slot="1">INTAKE OPEN · FEED LIVE</span>
+          <span className="sysLine mono" data-slot="2">PIPELINE RUN · ARCHIVE SYNC · NEON ON</span>
+          <span className="sysLine mono" data-slot="3" />
+          <span className="sysLine mono" data-slot="4" />
+          <span className="sysLine mono" data-slot="5" />
+          <span className="sysLine mono" data-slot="6" />
+          <span className="sysLine mono" data-slot="7" />
         </div>
 
         <a className="scrollCue mono" href="#featured">
@@ -193,8 +198,6 @@ function App() {
           />
           <i className="fxTag mono" aria-hidden="true" />
         </div>
-        {/* the sync streams from the datastore down into the repo grid */}
-        <span className="dbLinks" aria-hidden="true" />
         <div className="repoGrid" data-state={state}>
           {state === "loading" &&
             [0, 1, 2, 3].map((i) => (
