@@ -51,11 +51,12 @@ const FACES = {
     f.block(4, y, 8, 1, 1);
   },
   calm(f) {
-    // Half-lidded gauges: all systems nominal.
+    // Half-lidded gauges: all systems nominal, needles still tracking.
+    const g = Math.round(f.gazeX);
     f.block(3, 4, 4, 2, 1);
-    f.px(4, 5, 2);
+    f.px(Math.min(Math.max(4 + g, 3), 6), 5, 2);
     f.block(9, 4, 4, 2, 1);
-    f.px(10, 5, 2);
+    f.px(Math.min(Math.max(10 + g, 9), 12), 5, 2);
     f.block(5, 9, 6, 1, 1);
   },
   focus(f) {

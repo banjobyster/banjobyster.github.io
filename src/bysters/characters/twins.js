@@ -116,20 +116,23 @@ const FACES = {
     for (let x = 3; x <= 8; x++) f.px(x, 7 + ((x + k) % 2), 1);
   },
   panic(f) {
-    // Tiny pupils in huge whites, a quivering o mouth.
+    // Tiny pupils in huge whites, locked on the threat, a quivering o mouth.
+    const gx = Math.round(f.gazeX);
+    const gy = Math.round(f.gazeY * 0.8);
     for (const c of [1, 7]) {
       f.block(c, 1, 4, 4, 1);
-      f.px(c + 1, 2, 3);
+      f.px(Math.min(Math.max(c + 1 + gx, c), c + 3), Math.min(Math.max(2 + gy, 1), 4), 3);
     }
     const j = ((f.t * 13) | 0) % 2;
     f.block(4 + j, 6, 3, 2, 2);
   },
   peek(f) {
-    // Eyes squeezed to one side, watching without watching.
+    // Eyes squeezed low, but the pupils stay on whatever they fear.
+    const g = Math.round(f.gazeX);
     f.block(1, 3, 3, 2, 1);
-    f.px(1, 4, 3);
+    f.px(Math.min(Math.max(2 + g, 1), 3), 4, 3);
     f.block(6, 3, 3, 2, 1);
-    f.px(6, 4, 3);
+    f.px(Math.min(Math.max(7 + g, 6), 8), 4, 3);
     f.px(5, 7, 1);
   },
   grit(f) {
@@ -168,7 +171,7 @@ function makeTwin(name, col, accessory) {
     face: {
       w: 12,
       h: 9,
-      animated: ['excited', 'cry', 'dizzy', 'panic', 'focus'],
+      animated: ['excited', 'cry', 'dizzy', 'panic', 'focus', 'peek'],
       exprs: FACES,
     },
 

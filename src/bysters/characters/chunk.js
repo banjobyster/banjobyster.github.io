@@ -46,11 +46,13 @@ const PARAMS = {
 
 const FACES = {
   idle(f) {
-    // Weary flat lids, a resting mouth: tired but on duty.
-    f.block(3, 4, 4, 2, 1);
-    f.px(4, 4, 3);
-    f.block(9, 4, 4, 2, 1);
-    f.px(10, 4, 3);
+    // Weary flat lids, a resting mouth: tired but on duty, and the pupils
+    // still follow the world.
+    const g = Math.round(f.gazeX * 1.2);
+    for (const c of [3, 9]) {
+      f.block(c, 4, 4, 2, 1);
+      f.px(Math.min(Math.max(c + 1 + g, c), c + 3), 5, 3);
+    }
     f.block(6, 9, 4, 1, 1);
   },
   grit(f) {
@@ -81,8 +83,9 @@ const FACES = {
     f.px(7, 9, 0);
   },
   squint(f) {
-    // The suspicious once-over: flat lids, pupils sweeping slowly in sync.
-    const sl = Math.round(Math.sin(f.t * 1.8) * 1.6);
+    // The suspicious once-over: flat lids, pupils pinned on the cursor
+    // (gaze), so his glare literally follows you around.
+    const sl = Math.round(f.gazeX * 1.6);
     for (const c of [3, 9]) {
       f.block(c, 4, 4, 2, 1);
       f.px(Math.min(Math.max(c + 1 + sl, c), c + 3), 5, 3);

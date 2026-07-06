@@ -65,19 +65,22 @@ const FACES = {
     f.px(11, 1 - k < 0 ? 0 : 1 - k, 1);
   },
   startle(f) {
-    // Wide amber saucers, a jitter to the whole frame.
+    // Wide amber saucers locked on whatever startled him, frame jittering.
     const j = ((f.t * 12) | 0) % 2;
-    f.block(1 + j, 2, 4, 4, 1);
-    f.px(2 + j, 3, 3);
-    f.block(7 + j, 2, 4, 4, 1);
-    f.px(8 + j, 3, 3);
+    const gx = Math.round(f.gazeX);
+    const gy = Math.round(f.gazeY * 0.8);
+    for (const c of [1 + j, 7 + j]) {
+      f.block(c, 2, 4, 4, 1);
+      f.px(Math.min(Math.max(c + 1 + gx, c), c + 3), Math.min(Math.max(3 + gy, 2), 5), 3);
+    }
     f.block(5, 7, 2, 2, 2);
   },
   peek(f) {
+    const g = Math.round(f.gazeX);
     f.block(2, 4, 3, 2, 1);
-    f.px(2, 4, 3);
+    f.px(Math.min(Math.max(3 + g, 2), 4), 4, 3);
     f.block(7, 4, 3, 2, 1);
-    f.px(7, 4, 3);
+    f.px(Math.min(Math.max(8 + g, 7), 9), 4, 3);
   },
   dream(f) {
     // Half-open, pupils drifted up: watching something no one else sees.
@@ -106,7 +109,7 @@ export const NIB = {
   face: {
     w: 12,
     h: 10,
-    animated: ['sleepy', 'startle'],
+    animated: ['sleepy', 'startle', 'peek'],
     exprs: FACES,
   },
 
