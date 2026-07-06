@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fixture gallery</title>
+<link rel="stylesheet" href="./bysters-fixtures.css" />
+<style>
+  /* Standalone theme vars (mirrors src/index.css) so the shared fixture
+     stylesheet renders here exactly as it does on the site. */
+  :root[data-theme="light"] {
+    --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    --bg: #e9e5da; --panel: #f4f1e9; --panel-2: #efeadf; --screen: #23211b; --ink: #26231b;
+    --ink-soft: #43402f; --muted: #6f6959; --line: #c6bfac; --line-soft: #d8d2c1;
+    --accent: #1e7a3f; --led: #2fc064; --led-warn: #d9a13b; --led-err: #d96f4a;
+    --led-off: #b5ae9c;
+    --shadow: 0 1px 2px rgba(38,35,27,.07), 0 8px 20px -10px rgba(38,35,27,.16);
+  }
+  :root[data-theme="dark"] {
+    --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    --bg: #191612; --panel: #292419; --panel-2: #231e14; --screen: #0d0b07; --ink: #f2ecdc;
+    --ink-soft: #d9d1bc; --muted: #aaa089; --line: #4e4732; --line-soft: #393221;
+    --accent: #56d989; --led: #47e381; --led-warn: #e6ac45; --led-err: #ea8058;
+    --led-off: #544c38;
+    --shadow: 0 1px 2px rgba(0,0,0,.45), 0 12px 28px -12px rgba(0,0,0,.62);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 24px 80px; background: var(--bg); color: var(--ink);
+    font-family: ui-monospace, Consolas, monospace; transition: background .2s;
+  }
+  h1 { font-size: 15px; letter-spacing: .12em; }
+  p.hint { color: var(--muted); font-size: 12px; max-width: 62ch; line-height: 1.6; }
+  .row { display: flex; flex-wrap: wrap; gap: 44px; align-items: flex-start; margin: 34px 0; }
+  .case { display: flex; flex-direction: column; gap: 14px; }
+  .case > .label { font-size: 11px; letter-spacing: .12em; color: var(--muted); }
+  button {
+    font: inherit; font-size: 11px; letter-spacing: .1em; cursor: pointer;
+    color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 12px;
+  }
+  .bar { display: flex; gap: 10px; }
+  /* minimal mocks of the site anatomy each station lives in */
+  .portRowMock { display: flex; align-items: center; gap: 14px; padding: 10px 0; }
+  .portRowMock .lbl { font-size: 11px; letter-spacing: .12em; color: var(--muted); }
+  .device {
+    position: relative; width: 300px; padding: 14px; border: 1px solid var(--line);
+    border-radius: 12px; background: var(--panel); box-shadow: var(--shadow);
+  }
+  .deviceScreen { display: block; }
+  .screenGlass {
+    display: grid; place-items: center; height: 120px; border-radius: 8px;
+    background: var(--screen); overflow: hidden;
+  }
+  .screenGlass img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .screenIdle { color: var(--led); font-size: 11px; letter-spacing: .18em; }
+  .deviceMeta { display: flex; align-items: center; gap: 10px; margin-top: 12px;
+    color: var(--muted); font-size: 10px; letter-spacing: .12em; }
+  .ledStrip { display: inline-flex; gap: 4px; }
+  .ledStrip i { width: 5px; height: 5px; border-radius: 50%; background: var(--led); }
+  .devicePort {
+    position: relative; margin-left: auto; width: 24px; height: 13px;
+    border: 1px solid var(--line); border-radius: 3px; background: var(--screen);
+  }
+  .hatch {
+    display: inline-flex; align-items: center; gap: 12px; width: fit-content;
+    padding: 9px 14px 9px 11px; border: 1px solid var(--line); border-radius: 7px;
+    background: var(--panel-2); margin-bottom: 14px;
+  }
+  .hatchLabel { font-size: 10.5px; color: var(--muted); }
+  .storCase { width: 320px; }
+  .repoCard {
+    display: flex; flex-direction: column; gap: 6px; margin-top: 14px;
+    padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel); font-size: 11px; color: var(--muted);
+  }
+  .repoCard b { color: var(--ink); letter-spacing: .06em; }
+  .contactMail {
+    font-size: 1.5rem; font-weight: 600; color: var(--ink); text-decoration: none;
+    border-bottom: 2px solid var(--line); padding-bottom: 4px;
+    font-family: system-ui, sans-serif;
+  }
+  .ciCase { width: min(640px, 92vw); }
+</style>
+</head>
+<body>
+<h1>FIXTURE GALLERY · THE MACHINE'S STATIONS</h1>
+<p class="hint">The page is one system: data enters at the INTAKE, is processed
+by the DEPLOY PIPELINE, feeds each project through its PORT plug, syncs to the
+ARCHIVE datastore, and the last of it lights the EMAIL NEON at EOF. Every
+station is a control you can flip, with a state tag beside it. FEED simulates
+the intake brownout; THEME checks both palettes. On the live page these same
+states are driven by the bysters through the fixture store.</p>
+<div class="bar">
+  <button onclick="document.documentElement.dataset.theme =
+    document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">THEME</button>
+  <button onclick="if (document.documentElement.dataset.feed) { delete document.documentElement.dataset.feed; }
+    else { document.documentElement.dataset.feed = 'down'; }">FEED ON/OFF</button>
+</div>
+
+<div class="row">
+  <div class="case">
+    <span class="label">INTAKE · breaker (click it)</span>
+    <div class="portRowMock">
+      <span class="lbl">PORT DATA-01</span>
+      <span class="fx fxIntake" data-state="open" style="--pulse:0" onclick="flip(this,'open','closed')"></span>
+      <i class="fxTag"></i>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="case ciCase">
+    <span class="label">PIPELINE · flip the lever on the shoulder</span>
+    <div class="ciConsole" style="margin-top:12px">
+      <div class="ciHead"><span>DEPLOY PIPELINE</span><span class="ciId">CI-01</span></div>
+      <div class="ciStages">
+        <span class="ciStage" data-stage="build"><i class="ciDot"></i>BUILD</span>
+        <span class="ciTrack t1"><i class="ciPacket"></i></span>
+        <span class="ciStage" data-stage="test"><i class="ciDot"></i>TEST</span>
+        <span class="ciTrack t2"><i class="ciPacket"></i></span>
+        <span class="ciStage" data-stage="deploy"><i class="ciDot"></i>DEPLOY</span>
+      </div>
+      <span class="fx fxPipeline" data-state="flowing" style="--pulse:1" onclick="flip(this,'flowing','jammed')"></span>
+      <i class="fxTag"></i>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="case ciCase">
+    <span class="label">SYS LOG · the machine narrating itself (live on the site)</span>
+    <div class="sysLog">
+      <span class="sysHead">SYS LOG</span>
+      <span class="sysLine">KIP POPPED PRJ 03 PORT</span>
+      <span class="sysLine">CHUNK RESEATED PRJ 03 PORT</span>
+      <span class="sysLine" data-tone="you">YOU JAMMED PIPELINE</span>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="case">
+    <span class="label">PORT · linked (plug seated, breathing)</span>
+    <div class="device">
+      <a class="deviceScreen"><span class="screenGlass"><span class="screenIdle">SIGNAL OK</span></span></a>
+      <div class="deviceMeta"><span>PRJ 01</span>
+        <span class="ledStrip"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="devicePort fx fxPort" data-state="linked" style="--pulse:2" onclick="flip(this,'linked','cut')"></span>
+        <i class="fxTag"></i></div>
+    </div>
+  </div>
+  <div class="case">
+    <span class="label">PORT · cut (plug dangles, TV powers off)</span>
+    <div class="device">
+      <a class="deviceScreen"><span class="screenGlass"><span class="screenIdle">SIGNAL OK</span></span></a>
+      <div class="deviceMeta"><span>PRJ 02</span>
+        <span class="ledStrip"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="devicePort fx fxPort" data-state="cut" style="--pulse:3" onclick="flip(this,'linked','cut')"></span>
+        <i class="fxTag"></i></div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="case storCase" id="more">
+    <span class="label">ARCHIVE · datastore node; each card gets a sync stream</span>
+    <div>
+      <div class="hatch">
+        <span class="hatchLabel">EXT STORAGE</span>
+        <span class="fx fxArchive" data-state="syncing" style="--pulse:12" onclick="flip(this,'syncing','offline')"></span>
+        <i class="fxTag"></i>
+      </div>
+      <a class="repoCard"><b>leetcode_helper_extension</b>Repo card mock</a>
+      <a class="repoCard"><b>Asteroids3D</b>Repo card mock</a>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="case">
+    <span class="label">NEON · the email is the sign; pull the lever (zap)</span>
+    <div class="neonWrap">
+      <a class="contactMail" href="#">someone@example.com</a>
+      <span class="fx fxNeon" data-state="on" style="--pulse:13" onclick="flip(this,'on','off')"></span>
+      <i class="fxTag"></i>
+    </div>
+  </div>
+</div>
+
+<script>
+  function flip(el, a, b) { el.dataset.state = el.dataset.state === a ? b : a; }
+</script>
+</body>
+</html>
