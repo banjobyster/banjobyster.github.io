@@ -40,8 +40,8 @@ function App() {
           rel="noreferrer"
           aria-label="bysters: the open-source framework these creatures run on"
         >
+          <i aria-hidden="true" />
           BYSTERS
-          <span className="navArrow" aria-hidden="true">↗</span>
         </a>
         <ThemeToggle />
       </div>
@@ -176,7 +176,8 @@ function App() {
           More on GitHub
           <span className="headRule" aria-hidden="true" />
           <a className="headLink mono" href={LINKS.github} target="_blank" rel="noreferrer">
-            github.com/{GITHUB_USER} ↗
+            <span className="headLinkLong">github.com/{GITHUB_USER}</span>
+            <span className="headLinkShort" aria-hidden="true">GITHUB</span>
           </a>
         </h2>
         <div className="hatch">
@@ -238,7 +239,13 @@ function App() {
             into the server side of products: services, data flows, and the
             internal tooling other engineers build on.
           </p>
-          <ul className="chips mono">
+          <p>
+            The tiny robots keeping this page running are one of those
+            projects. If a few of them have wandered down here to sit with
+            you, that is their doing, not mine.
+          </p>
+          <p className="chipsLabel mono" aria-hidden="true">TOOLKIT</p>
+          <ul className="chips mono" aria-label="Toolkit">
             {SKILLS.map((s) => (
               <li key={s}>{s}</li>
             ))}

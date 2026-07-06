@@ -251,7 +251,8 @@ html[data-feed="down"] .fxNeon {
   box-shadow: 0 -1px 0 1.5px var(--accent);
   transform-origin: 2px 11px;
   transform: rotate(-32deg);
-  transition: transform 0.18s cubic-bezier(0.6, -0.5, 0.4, 1.6), box-shadow 0.2s;
+  /* self-reversing curve: halt and restore are exact mirrors */
+  transition: transform 0.18s cubic-bezier(0.6, -0.55, 0.4, 1.55), box-shadow 0.2s;
 }
 /* the pivot cap */
 .fxPipeline::after {
@@ -348,6 +349,9 @@ html[data-feed="down"] .fxNeon {
    plug pops out and dangles on its lead, and the card's screen powers down
    like a TV switched off at the wall (standby dot included). */
 
+/* pop and reseat ride ONE self-reversing curve (its cubic-bezier equals its
+   own time-mirror), on every animated property, so off and on are exact
+   reverses of each other instead of two different moves */
 .fxPort::before {
   content: "";
   position: absolute;
@@ -358,7 +362,9 @@ html[data-feed="down"] .fxNeon {
   border-radius: 2px;
   background: var(--ink-soft);
   transform: translateX(-50%);
-  transition: transform 0.3s cubic-bezier(0.5, -0.4, 0.5, 1.3), top 0.3s ease;
+  transition:
+    transform 0.3s cubic-bezier(0.6, -0.35, 0.4, 1.35),
+    top 0.3s cubic-bezier(0.6, -0.35, 0.4, 1.35);
   box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
 }
 .fxPort::after {
@@ -370,7 +376,7 @@ html[data-feed="down"] .fxNeon {
   height: 5px;
   background: var(--ink-soft);
   transform: translateX(-50%);
-  transition: height 0.3s ease;
+  transition: height 0.3s cubic-bezier(0.6, -0.35, 0.4, 1.35);
 }
 .fxPort[data-state="linked"] {
   border-color: color-mix(in srgb, var(--led) 40%, var(--line));
@@ -426,11 +432,12 @@ html[data-feed="down"] .fxNeon {
   100% { filter: brightness(0); transform: scaleY(0.008) scaleX(0.55); }
 }
 
-/* ...and the TV-on: the same move in reverse when the plug reseats. It
-   also plays once on page load, which reads as the machine booting. */
+/* ...and the TV-on: the exact time-mirror of the TV-off (mirrored keyframes
+   AND the reversed easing curve, since ease-out played backwards is ease-in).
+   It also plays once on page load, which reads as the machine booting. */
 .device:has(.fxPort[data-state="linked"]) .screenGlass img,
 .device:has(.fxPort[data-state="linked"]) .screenIdle {
-  animation: fx-tvon 0.55s ease-out;
+  animation: fx-tvon 0.5s cubic-bezier(0.42, 0, 1, 1);
 }
 @keyframes fx-tvon {
   0% { filter: brightness(0); transform: scaleY(0.008) scaleX(0.55); }
@@ -626,7 +633,8 @@ html[data-feed="down"] .fxNeon {
   border-radius: 3px;
   background: var(--accent);
   box-shadow: 0 1px 0 0 color-mix(in srgb, var(--ink) 35%, var(--line));
-  transition: top 0.16s cubic-bezier(0.6, -0.4, 0.4, 1.5), background 0.16s ease;
+  /* self-reversing curve: douse and relight are exact mirrors */
+  transition: top 0.16s cubic-bezier(0.6, -0.45, 0.4, 1.45), background 0.16s ease;
 }
 .fxNeon[data-state="off"]::after {
   top: 15px;
