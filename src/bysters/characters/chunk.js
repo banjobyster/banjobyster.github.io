@@ -32,9 +32,9 @@ const PARAMS = {
   footRestX: [15, 8, -8, -15],
   standH: 24,
   stepThresholdBase: 17, // long heaving strides
-  walkSpeed: 120,
+  walkSpeed: 150, // brisk for his bulk: the whole page is his beat now
   wanderSpeed: 60,
-  accel: 480, // takes a moment to get going, and to stop
+  accel: 560, // takes a moment to get going, and to stop
   bodySpring: 120, // soft and heavy: settles with a sway
   bodyDamp: 26,
   rotSpring: 100,

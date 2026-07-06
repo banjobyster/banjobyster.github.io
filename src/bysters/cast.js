@@ -87,6 +87,7 @@ function workOrder(owner, { priority = 60, face = "grit" } = {}) {
   const ops = STATIONS.filter((s) => s.owner === owner).map((s) =>
     operateFixtures({ match: (fx) => s.match(fx) && fx.state === s.bad, drive: s.good, face, priority }),
   );
+  const trekFace = mood(face, { priority });
   return {
     id: `work-order-${owner}`,
     priority,
@@ -94,7 +95,9 @@ function workOrder(owner, { priority = 60, face = "grit" } = {}) {
     update(world, self) {
       for (const op of ops) {
         const bid = op.update(world, self);
-        if (bid) return bid;
+        // wear the work face for the whole call-out, trek included, so a
+        // byster en route to a job never reads as loitering
+        if (bid) return { ...trekFace.update(world, self), ...bid };
       }
       return null;
     },
@@ -162,23 +165,67 @@ function territory(homeSel, { every = 12, dwell = 4, face = "idle", priority = 3
 }
 
 // --- mimicry, made legible ---------------------------------------------------
-// A twin picks a grown-up, treks right up to it, then falls in step BESIDE
-// it: a dedicated copycat face, the adult's pace, eyes locked on the model.
-// approach + reactTo merged into ONE behavior so a single sometimes() gates
-// the whole episode (trek and copy never desync) and the copy channels
-// override the trek's while the adult is within `beside`.
-function mimic(adult, { face, pace: paceMul, beside = 150, priority = 72 } = {}) {
-  const trek = approach((v) => v.name === adult, { notice: 4000, face: "curious", priority });
-  const copy = reactTo((v) => v.name === adult, { radius: beside, face, pace: paceMul, gaze: true, priority });
+// A twin picks a grown-up, treks over, and falls in step BESIDE it: a
+// copycat face, the adult's pace, eyes locked on the model. approach +
+// reactTo merged into ONE behavior so a single sometimes() gates the whole
+// episode (trek and copy never desync) and the copy channels override the
+// trek's while the adult is within `beside`.
+// The trek runs against a shifted world view in which the model stands
+// `gap` px to the side (picked once per episode, so the shadow never crosses
+// through its model), landing the copycat NEXT to its idol, never
+// underneath it: model and mini stay side by side where the impression can
+// actually be seen.
+// The impression tracks the model's MOMENT, not a frozen caricature:
+// `moment(world, model)` names the face for what the model is visibly doing
+// right now, from what a twin can legitimately sense (broadcast tags, the
+// machine's state), so a resting Chunk gets a flopped-down copy beside him,
+// not an angry one. Stance follows for free: a stopped model stops the
+// trek's goal, so the mini idles beside it.
+function mimic(adult, { moment, pace: paceMul, beside = 150, gap = 110, priority = 72 } = {}) {
+  const trek = approach((v) => v.name === adult, { notice: Infinity, face: "curious", priority });
+  const copy = reactTo((v) => v.name === adult, { radius: beside, pace: paceMul, gaze: true, priority });
+  const faces = {}; // face name -> a mood() that bids it, created on demand
+  const faceBid = (name, world, self) => (faces[name] || (faces[name] = mood(name, { priority }))).update(world, self);
   return {
     id: `mimic-${adult}`,
     priority,
-    channels: [...new Set([...trek.channels, ...copy.channels])],
+    channels: [...new Set([...trek.channels, ...copy.channels, "face"])],
+    _side: null,
     update(world, self) {
-      const go = trek.update(world, self);
+      const aside = {
+        ...world,
+        bysters: {
+          ...world.bysters,
+          nearestMatching: (s, pred, radius) => {
+            const t = world.bysters.nearestMatching(s, pred, radius);
+            if (!t) return null;
+            if (this._side == null) this._side = Math.sign(s.x - t.x) || 1;
+            return { ...t, x: t.x + this._side * gap };
+          },
+        },
+      };
+      // never stand ON the model: where terrain is sparse the vertex nearest
+      // the offset point can be the model's own, so veto its personal space
+      // from the trek's options (falling back to everything if that empties)
+      const real = world.bysters.nearestMatching(self, (v) => v.name === adult, Infinity);
+      let trekSelf = self;
+      if (real) {
+        const keep = new Set();
+        for (const id of self.reachable) {
+          const p = world.nav.vertexPoint(id);
+          if (!p || Math.hypot(p.x - real.x, p.y - real.bodyY) > 48) keep.add(id);
+        }
+        if (keep.size) trekSelf = { ...self, reachable: keep };
+      }
+      const go = trek.update(aside, trekSelf);
       const ape = copy.update(world, self);
-      if (!go && !ape) return null;
-      return { ...(go || {}), ...(ape || {}) };
+      if (!go && !ape) {
+        this._side = null;
+        return null;
+      }
+      const model = ape ? world.bysters.nearestMatching(self, (v) => v.name === adult, beside) : null;
+      const impression = model ? faceBid(moment(world, model), world, self) : null;
+      return { ...(go || {}), ...(ape || {}), ...(impression || {}) };
     },
   };
 }
@@ -199,6 +246,23 @@ function conductorAlarm({ priority = 58 } = {}) {
     update(world, self) {
       if (!world.fixtures || !world.fixtures.all().some(isBroken)) return null;
       return { ...siren.update(world, self), ...surge.update(world, self), ...(pacing.update(world, self) || {}) };
+    },
+  };
+}
+
+// Brownout protocol: while the intake is shut the WHOLE page is starving,
+// so the engineer double-times it, tired or not. A pace bid one notch above
+// his work order, so it outranks the fatigue wind-down without touching the
+// shift clock; everything else about the trek is unchanged.
+function brownoutHustle({ priority = 61, pace = 1.2 } = {}) {
+  const hustle = liveliness({ base: pace, vary: 0.08, every: 1.3, priority });
+  return {
+    id: "brownout-hustle",
+    priority,
+    channels: ["pace"],
+    update(world, self) {
+      const down = world.fixtures && world.fixtures.all().some((fx) => isIntake(fx) && fx.state === "closed");
+      return down ? hustle.update(world, self) : null;
     },
   };
 }
@@ -293,13 +357,23 @@ function twin({ name, character, other, bold }) {
         : [fleeCursor({ radius: 130, face: "peek", speed: 1.4 }), avoidCursorGaze()]),
 
       // -- mimicry: idolize the grown-ups. Trek over, fall in step, and APE
-      //    them: Chunk's brow-slash scowl at a heavy crawl, Otto's gauge-and-
-      //    graph dashboard at a conductor's stride, eyes pinned on the model
-      //    the whole time. Windows are long so an episode reads as a scene,
-      //    not a flicker, and while it runs the twin even forgets to be
-      //    scared of the engineer (priority above the guilt flee) --
-      sometimes(mimic("chunk", { face: "mimicChunk", pace: 0.42 }), 0.4, { window: bold ? 15 : 17 }),
-      sometimes(mimic("otto", { face: "mimicOtto", pace: 1.25 }), 0.4, { window: bold ? 19 : 23 }),
+      //    what they are doing right now: Chunk's brow-slash scowl at a
+      //    heavy crawl (or a flopped-down nap when he is resting), Otto's
+      //    gauge-and-graph dashboard at a conductor's stride (or wide-eyed
+      //    panic while he is alarming), eyes pinned on the model the whole
+      //    time. Windows are long so an episode reads as a scene, not a
+      //    flicker, and while it runs the twin even forgets to be scared of
+      //    the engineer (priority above the guilt flee) --
+      sometimes(
+        mimic("chunk", { pace: 0.42, moment: (w, model) => (model.tags.has("resting") ? "sleepy" : "mimicChunk") }),
+        0.4,
+        { window: bold ? 15 : 17 },
+      ),
+      sometimes(
+        mimic("otto", { pace: 1.25, moment: (w) => (w.fixtures && w.fixtures.all().some(isBroken) ? "panic" : "mimicOtto") }),
+        0.4,
+        { window: bold ? 19 : 23 },
+      ),
 
       // -- separation anxiety: when idle and far apart, seek the sibling --
       approach((v) => v.name === other, { notice: 4000, face: bold ? "sad" : "cry", priority: 24 }),
@@ -321,10 +395,10 @@ function twin({ name, character, other, bold }) {
 // efficient with just enough variance to never grind one staircase.
 const WHIMSY = { twins: 0.9, chunk: 0.25, otto: 0.2, nib: 0.7 };
 
+// Cast order is draw order (each renderer is added to the stage in turn), so
+// the big adults come first and the tiny bysters last: when a copycat twin
+// stands beside its model, the small one is always the one in front.
 export const CAST = [
-  twin({ name: "kip", character: KIP, other: "pip", bold: true }),
-  twin({ name: "pip", character: PIP, other: "kip", bold: false }),
-
   // Chunk, the field engineer, THE fixer: every broken station on the page
   // is one work order (intake, pipeline, card ports, archive, in triage
   // order), worked in fatigue-gated shifts long enough to finish a full
@@ -338,7 +412,8 @@ export const CAST = [
     spawnAt: ".hatch",
     planner: whimsicalPlanner(WHIMSY.chunk),
     behaviors: [
-      fatigue(workOrder("chunk", { priority: 60 }), { runFor: 20, restFor: 3.2, face: "wipe", tag: "resting", minPace: 0.55 }),
+      fatigue(workOrder("chunk", { priority: 60 }), { runFor: 30, restFor: 2.8, face: "wipe", tag: "resting", minPace: 0.7 }),
+      brownoutHustle(),
       territory(".hatch", { every: 13, dwell: 5.5, face: "wipe", priority: 32 }),
       wander(),
       watchCursor(),
@@ -389,10 +464,11 @@ export const CAST = [
     behaviors: [
       workOrder("nib", { priority: 65, face: "happy" }),
       // brushing the lever: now and then he douses his own sign by accident
-      // and relights it (with the zap). Short window + tiny p, because he
-      // LIVES beside this fixture: a long active window would have him flap
-      // it off-on-off for the whole window.
-      sometimes(operateFixtures({ match: (fx) => isNeon(fx) && fx.state === "on", drive: "off", face: "startle", priority: 44 }), 0.025, { window: 5 }),
+      // and relights it (with the zap). The window is barely longer than one
+      // actuation, because he LIVES beside this fixture: any window that fits
+      // a second flip becomes a douse-relight flap loop with his own
+      // lamplighting. p keeps the same accident rate (~1 per 3 min).
+      sometimes(operateFixtures({ match: (fx) => isNeon(fx) && fx.state === "on", drive: "off", face: "startle", priority: 44 }), 0.01, { window: 2 }),
       fleeCursor({ radius: 90, face: "startle", speed: 1.5 }),
       // the shy-kid loop: fascinated by the twins from a distance, gone the
       // moment they close in
@@ -407,4 +483,7 @@ export const CAST = [
       mood("idle"),
     ],
   },
+
+  twin({ name: "kip", character: KIP, other: "pip", bold: true }),
+  twin({ name: "pip", character: PIP, other: "kip", bold: false }),
 ];
