@@ -31,11 +31,12 @@ import { KIP, PIP } from "./characters/twins.js";
 import { CHUNK } from "./characters/chunk.js";
 import { OTTO } from "./characters/otto.js";
 import { NIB } from "./characters/nib.js";
+import { whimsicalPlanner } from "./planner.js";
 
 const {
   operateFixtures, followCursor, wander, watchCursor, watchNearest,
   approach, flee, caughtBy, reactTo, perch, fatigue, fleeCursor,
-  avoidCursorGaze, sometimes, liveliness, mood, flourish, sleep,
+  avoidCursorGaze, sometimes, liveliness, mood, flourish,
 } = behaviors;
 
 // Scene-wide cruise derate so nobody blurs across the page.
@@ -106,24 +107,28 @@ function twin({ name, character, other, bold }) {
     caps: TWIN_CAPS,
     speedScale: DERATE,
     spawnAt: ".device",
+    planner: whimsicalPlanner(WHIMSY.twins),
     behaviors: [
-      // -- the tag game (asymmetric so it never becomes a stable orbit) --
+      // -- the tag game (asymmetric so it never becomes a stable orbit).
+      //    fatigue() here is re-skinned as a toddler attention span: Kip does
+      //    not get TIRED (he is tiny, he never tires), he gets DISTRACTED
+      //    (curious face, dawdling pace) and then remembers the game --
       ...(bold
         ? [
             fatigue(
               approach((v) => v.name === other && !v.tags.has("caught"), { notice: 480, face: "grin", priority: 60 }),
-              { runFor: 5, restFor: 3.5, face: "sleepy", tag: "winded", minPace: 0.45 },
+              { runFor: 5, restFor: 3.5, face: "curious", tag: "distracted", minPace: 0.45 },
             ),
             reactTo((v) => v.name === other && v.tags.has("caught"), { radius: 130, face: "excited", pace: 0.5, priority: 58, gaze: true }),
           ]
         : [
-            caughtBy((v) => v.name === other && !v.tags.has("winded"), { radius: 52, stunFor: 2, immuneFor: 4.5, face: "dizzy" }),
-            flee((v) => v.name === other && !v.tags.has("winded"), { radius: 175, face: "panic", priority: 62 }),
+            caughtBy((v) => v.name === other && !v.tags.has("distracted"), { radius: 52, stunFor: 2, immuneFor: 4.5, face: "dizzy" }),
+            flee((v) => v.name === other && !v.tags.has("distracted"), { radius: 175, face: "panic", priority: 62 }),
           ]),
 
-      // -- stall buddy: when the sibling is winded or stunned, come sit with
-      //    them, so every pause reads as "twins", never "two random sleepers"
-      approach((v) => v.name === other && (v.tags.has("winded") || v.tags.has("caught")), { notice: 4000, face: "curious", priority: 42 }),
+      // -- stall buddy: when the sibling is distracted or stunned, come hang
+      //    around them, so every pause reads as "twins", never two sleepers
+      approach((v) => v.name === other && (v.tags.has("distracted") || v.tags.has("caught")), { notice: 4000, face: "curious", priority: 42 }),
 
       // -- guilt: scatter when the engineer storms close --
       flee((v) => v.name === "chunk" && !v.tags.has("resting"), { radius: 85, face: "panic", priority: 70 }),
@@ -179,6 +184,11 @@ function twin({ name, character, other, bold }) {
   };
 }
 
+// Route temperament, through the framework's planner seam: the twins take
+// gleefully scenic near-ties, Nib meanders, the working adults stay mostly
+// efficient with just enough variance to never grind one staircase.
+const WHIMSY = { twins: 0.9, chunk: 0.25, otto: 0.2, nib: 0.7 };
+
 export const CAST = [
   twin({ name: "kip", character: KIP, other: "pip", bold: true }),
   twin({ name: "pip", character: PIP, other: "kip", bold: false }),
@@ -192,6 +202,7 @@ export const CAST = [
     caps: HEAVY_CAPS,
     speedScale: DERATE,
     spawnAt: ".hatch",
+    planner: whimsicalPlanner(WHIMSY.chunk),
     behaviors: [
       fatigue(
         operateFixtures({ match: (fx) => isPort(fx) && fx.state === "cut", drive: "linked", face: "grit", priority: 60 }),
@@ -216,6 +227,7 @@ export const CAST = [
     caps: HEAVY_CAPS,
     speedScale: DERATE,
     spawnAt: "#ci-console",
+    planner: whimsicalPlanner(WHIMSY.otto),
     behaviors: [
       operateFixtures({ match: (fx) => isIntake(fx) && fx.state === "closed", drive: "open", face: "alarm", priority: 64 }),
       operateFixtures({ match: (fx) => isPipeline(fx) && fx.state === "jammed", drive: "flowing", face: "alarm", priority: 60 }),
@@ -229,29 +241,38 @@ export const CAST = [
     ],
   },
 
-  // Nib, the lamplighter: relights the neon and prefers its glow. His
-  // confinement is a preference, not a wall: the territory always pulls him
-  // back to the neon, so he can explore without ever stranding.
+  // Nib, the lamplighter: a tiny moth of a byster. He tends the sign he
+  // loves, meanders (whimsical routes), and is achingly shy: he creeps
+  // toward the twins when they visit the bottom of the page, bolts the
+  // moment they get close, and hides from being looked at. No sleeping, no
+  // stopping: he is small, small things do not tire. His confinement is a
+  // preference, not a wall: the territory always pulls him back to the
+  // neon, so he can explore without ever stranding.
   {
     name: "nib",
     character: NIB,
     caps: NIB_CAPS,
     speedScale: 0.6,
     spawnAt: ".contactBody",
+    planner: whimsicalPlanner(WHIMSY.nib),
     behaviors: [
       operateFixtures({ match: (fx) => isNeon(fx) && fx.state === "off", drive: "on", face: "happy", priority: 65 }),
-      // dozing against the lever: now and then he douses his own sign by
-      // accident, wakes, and relights it (with the zap). Short window + tiny
-      // p, because he LIVES beside this fixture: a long active window would
-      // have him flap it off-on-off for the whole window.
-      sometimes(operateFixtures({ match: (fx) => isNeon(fx) && fx.state === "on", drive: "off", face: "sleepy", priority: 44 }), 0.025, { window: 5 }),
+      // brushing the lever: now and then he douses his own sign by accident
+      // and relights it (with the zap). Short window + tiny p, because he
+      // LIVES beside this fixture: a long active window would have him flap
+      // it off-on-off for the whole window.
+      sometimes(operateFixtures({ match: (fx) => isNeon(fx) && fx.state === "on", drive: "off", face: "startle", priority: 44 }), 0.025, { window: 5 }),
       fleeCursor({ radius: 90, face: "startle", speed: 1.5 }),
-      sleep({ awakeFor: 8, sleepFor: 5.5, dim: 0.55, face: "sleepy" }),
+      // the shy-kid loop: fascinated by the twins from a distance, gone the
+      // moment they close in
+      flee((v) => v.name === "kip" || v.name === "pip", { radius: 70, face: "startle", priority: 72 }),
+      approach((v) => v.name === "kip" || v.name === "pip", { notice: 300, face: "peek", priority: 36 }),
+      avoidCursorGaze(),
       territory(".neonWrap", { every: 9.1, dwell: 4, face: "dream", priority: 30 }),
       wander(),
       watchNearest(),
-      flourish(["dream", "peek"], { every: 12.7, hold: 2 }),
-      liveliness({ base: 0.6, vary: 0.18, every: 5.2 }),
+      flourish(["dream", "peek", "happy"], { every: 9.7, hold: 2 }),
+      liveliness({ base: 0.6, vary: 0.3, every: 2.6 }),
       mood("idle"),
     ],
   },
