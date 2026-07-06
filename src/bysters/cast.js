@@ -41,7 +41,7 @@ import { whimsicalPlanner } from "./planner.js";
 const {
   operateFixtures, followCursor, wander, watchCursor, watchNearest,
   approach, flee, caughtBy, reactTo, perch, fatigue, fleeCursor,
-  avoidCursorGaze, sometimes, liveliness, mood, flourish,
+  avoidCursorGaze, sometimes, liveliness, mood, flourish, group,
 } = behaviors;
 
 // Scene-wide cruise derate so nobody blurs across the page.
@@ -168,82 +168,43 @@ function territory(homeSel, { every = 12, dwell = 4, face = "idle", priority = 3
   });
 }
 
-// What a byster's screen shows right now. Behaviors sense each other through
-// world views, but a face is pure presentation, and consumer land owns both
-// sides, so the impression reads it straight off the mounted cast (the same
-// handle the overlay publishes). Null when nothing is mounted (degraded or
-// headless), and the impression falls back to its signature act.
-function liveFace(name) {
-  const soc = typeof window !== "undefined" ? window.__society : null;
-  const m = soc && soc.byName ? soc.byName(name) : null;
-  return m && m.mover && m.mover.face ? m.mover.face.expr : null;
-}
-
 // --- mimicry, made legible ---------------------------------------------------
 // A twin picks a grown-up, treks over, and falls in step BESIDE it: a
-// copycat face, the adult's pace, eyes locked on the model. approach +
-// reactTo merged into ONE behavior so a single sometimes() gates the whole
-// episode (trek and copy never desync) and the copy channels override the
-// trek's while the adult is within `beside`.
-// The trek runs against a shifted world view in which the model stands
-// `gap` px to the side (picked once per episode, so the shadow never crosses
-// through its model), landing the copycat NEXT to its idol, never
-// underneath it: model and mini stay side by side where the impression can
-// actually be seen.
-// The impression copies what the model's screen ACTUALLY shows right now:
-// `act` translates the model's live expression into the twin's own face
+// copycat face, the adult's pace, eyes locked on the model. Three library
+// primitives fused by group() into ONE behavior, so a single sometimes()
+// gates the whole episode (trek and copy never desync) and later bids
+// override earlier ones while the adult is within `beside`.
+// The trek is approach() in escort mode: `standoff` seats the copycat a gap
+// to its own side of the model (side frozen while close, so the shadow never
+// crosses through its idol) and keeps it out of the model's personal space,
+// landing model and mini side by side where the impression can actually be
+// seen.
+// The impression copies what the model's screen ACTUALLY shows right now,
+// sensed from the model's view (world.bysters carries each byster's live
+// face): `act` translates the model's expression into the twin's own face
 // dialect frame by frame (grit becomes the brow-slash scowl, a rest-break
 // wipe becomes a flopped-down nap, an alarm becomes wide-eyed panic), with
 // `fallback` for anything untranslated, so the copy never lags behind or
 // contradicts the model. Stance follows for free: a stopped model stops
 // the trek's goal, so the mini idles beside it.
 function mimic(adult, { act = {}, fallback, pace: paceMul, beside = 150, gap = 110, priority = 72 } = {}) {
-  const trek = approach((v) => v.name === adult, { notice: Infinity, face: "curious", priority });
-  const copy = reactTo((v) => v.name === adult, { radius: beside, pace: paceMul, gaze: true, priority });
+  const isModel = (v) => v.name === adult;
+  const trek = approach(isModel, { notice: Infinity, face: "curious", priority, standoff: gap });
+  const copy = reactTo(isModel, { radius: beside, pace: paceMul, gaze: true, priority });
   const faces = {}; // face name -> a mood() that bids it, created on demand
-  const faceBid = (name, world, self) => (faces[name] || (faces[name] = mood(name, { priority }))).update(world, self);
-  return {
-    id: `mimic-${adult}`,
+  const impression = {
+    id: `impression-${adult}`,
     priority,
-    channels: [...new Set([...trek.channels, ...copy.channels, "face"])],
-    _side: null,
+    channels: ["face"],
     update(world, self) {
-      const aside = {
-        ...world,
-        bysters: {
-          ...world.bysters,
-          nearestMatching: (s, pred, radius) => {
-            const t = world.bysters.nearestMatching(s, pred, radius);
-            if (!t) return null;
-            if (this._side == null) this._side = Math.sign(s.x - t.x) || 1;
-            return { ...t, x: t.x + this._side * gap };
-          },
-        },
-      };
-      // never stand ON the model: where terrain is sparse the vertex nearest
-      // the offset point can be the model's own, so veto its personal space
-      // from the trek's options (falling back to everything if that empties)
-      const real = world.bysters.nearestMatching(self, (v) => v.name === adult, Infinity);
-      let trekSelf = self;
-      if (real) {
-        const keep = new Set();
-        for (const id of self.reachable) {
-          const p = world.nav.vertexPoint(id);
-          if (!p || Math.hypot(p.x - real.x, p.y - real.bodyY) > 48) keep.add(id);
-        }
-        if (keep.size) trekSelf = { ...self, reachable: keep };
-      }
-      const go = trek.update(aside, trekSelf);
-      const ape = copy.update(world, self);
-      if (!go && !ape) {
-        this._side = null;
-        return null;
-      }
-      const model = ape ? world.bysters.nearestMatching(self, (v) => v.name === adult, beside) : null;
-      const impression = model ? faceBid(act[liveFace(adult)] || fallback, world, self) : null;
-      return { ...(go || {}), ...(ape || {}), ...(impression || {}) };
+      const model = world.bysters.nearestMatching(self, isModel, beside);
+      if (!model) return null;
+      const name = act[model.face] || fallback;
+      return name ? (faces[name] || (faces[name] = mood(name, { priority }))).update(world, self) : null;
     },
   };
+  // keep the readable id: the twins' minds list `mimic-chunk`, not the fused internals
+  return Object.assign(group(trek, copy, impression, { priority }), { id: `mimic-${adult}` });
 }
 
 // --- the conductor's temperament ---------------------------------------------
@@ -252,16 +213,19 @@ function mimic(adult, { act = {}, fallback, pace: paceMul, beside = 150, gap = 1
 // territory primitive on a frantic cadence). The gate is the machine's
 // health, read from the same store the operators use.
 function conductorAlarm({ priority = 58 } = {}) {
-  const pacing = territory("#ci-console", { every: 2.1, dwell: 0.9, face: "alarm", priority });
-  const siren = mood("alarm", { priority });
-  const surge = liveliness({ base: DERATE * 1.55, vary: 0.25, every: 0.9, priority });
+  const commotion = group(
+    mood("alarm", { priority }),
+    liveliness({ base: DERATE * 1.55, vary: 0.25, every: 0.9, priority }),
+    territory("#ci-console", { every: 2.1, dwell: 0.9, face: "alarm", priority }),
+    { priority },
+  );
   return {
     id: "conductor-alarm",
     priority,
-    channels: ["locomotion", "face", "pace"],
+    channels: commotion.channels,
     update(world, self) {
       if (!world.fixtures || !world.fixtures.all().some(isBroken)) return null;
-      return { ...siren.update(world, self), ...surge.update(world, self), ...(pacing.update(world, self) || {}) };
+      return commotion.update(world, self);
     },
   };
 }
@@ -286,12 +250,15 @@ function brownoutHustle({ priority = 61, pace = 1.2 } = {}) {
 // ...and the payoff: the moment the last fault clears, a tada burst, so a
 // repair lands as a scene (Chunk wipes his brow, Otto takes the credit).
 function conductorCheer({ priority = 57, hold = 3.4 } = {}) {
-  const cheer = mood("tada", { priority });
-  const bounce = liveliness({ base: DERATE * 1.4, vary: 0.35, every: 0.7, priority });
+  const jubilee = group(
+    mood("tada", { priority }),
+    liveliness({ base: DERATE * 1.4, vary: 0.35, every: 0.7, priority }),
+    { priority },
+  );
   return {
     id: "conductor-cheer",
     priority,
-    channels: ["face", "pace"],
+    channels: jubilee.channels,
     _broken: false,
     _left: 0,
     update(world, self) {
@@ -301,7 +268,7 @@ function conductorCheer({ priority = 57, hold = 3.4 } = {}) {
       this._broken = broken;
       if (broken || this._left <= 0) return null;
       this._left -= world.dt || 0;
-      return { ...cheer.update(world, self), ...bounce.update(world, self) };
+      return jubilee.update(world, self);
     },
   };
 }
