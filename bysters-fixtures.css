@@ -327,7 +327,15 @@ html[data-feed="down"] .fxNeon {
   font-size: 10.5px;
   letter-spacing: 0.1em;
   color: var(--ink-soft);
-  min-height: 14px;
+  /* fixed slot geometry: a narration line must NEVER reflow the console.
+     The console is walkable terrain; when a long line wrapped on a narrow
+     phone the console grew, the terrain genuinely changed, and the whole
+     society rebuilt mid-scene. Long lines clip with an ellipsis instead. */
+  height: 14px;
+  line-height: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   opacity: 0.55;
 }
 .sysLine:empty::after {
