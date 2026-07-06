@@ -425,6 +425,19 @@ html[data-feed="down"] .fxNeon {
   55% { filter: brightness(0.9); transform: scaleY(0.012); }
   100% { filter: brightness(0); transform: scaleY(0.008) scaleX(0.55); }
 }
+
+/* ...and the TV-on: the same move in reverse when the plug reseats. It
+   also plays once on page load, which reads as the machine booting. */
+.device:has(.fxPort[data-state="linked"]) .screenGlass img,
+.device:has(.fxPort[data-state="linked"]) .screenIdle {
+  animation: fx-tvon 0.55s ease-out;
+}
+@keyframes fx-tvon {
+  0% { filter: brightness(0); transform: scaleY(0.008) scaleX(0.55); }
+  45% { filter: brightness(0.9); transform: scaleY(0.012) scaleX(1); }
+  70% { filter: brightness(2.4) saturate(0.3); transform: scaleY(0.05); }
+  100% { filter: none; transform: none; }
+}
 .device:has(.fxPort[data-state="cut"]) .screenGlass {
   position: relative;
 }
@@ -688,6 +701,8 @@ html[data-feed="down"] .neonWrap:has(.fxNeon[data-state="on"]) .contactMail {
   .device:has(.fxPort[data-state="cut"]) .screenGlass img,
   .device:has(.fxPort[data-state="cut"]) .screenGlass::after,
   .device:has(.fxPort[data-state="cut"]) .screenIdle,
+  .device:has(.fxPort[data-state="linked"]) .screenGlass img,
+  .device:has(.fxPort[data-state="linked"]) .screenIdle,
   .ciConsole:has(.fxPipeline[data-state="jammed"]) .ciId,
   .sysLine:last-child:not(:empty)::after {
     animation: none !important;
