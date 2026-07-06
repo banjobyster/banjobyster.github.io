@@ -121,18 +121,14 @@
   border-color: var(--muted);
 }
 
-.themeToggle i,
-.navLink i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--led);
-  transition: box-shadow 0.15s ease;
+.themeToggle span {
+  font-size: 13px;
+  line-height: 1;
 }
 
-.themeToggle:hover i,
-.navLink:hover i {
-  box-shadow: 0 0 6px 0 color-mix(in srgb, var(--led) 70%, transparent);
+.navLink svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* ---------------- hero ---------------- */
@@ -751,31 +747,6 @@
 
 .aboutBody p + p {
   margin-top: 14px;
-}
-
-/* the toolkit gets a station label, like every other panel on the machine */
-.aboutBody .chipsLabel {
-  margin-top: 30px;
-  font-size: 9.5px;
-  letter-spacing: 0.16em;
-  color: var(--muted);
-  opacity: 0.8;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.chips li {
-  font-size: 11px;
-  padding: 5px 11px;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  background: var(--panel);
-  color: var(--muted);
 }
 
 /* ---------------- contact / footer ---------------- */

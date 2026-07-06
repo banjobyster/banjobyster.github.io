@@ -10,6 +10,7 @@ import {
   IconLinkedIn,
   IconMail,
   IconArrowDown,
+  IconByster,
 } from "./components/Icons";
 import { GITHUB_USER } from "./data/projects";
 
@@ -18,8 +19,6 @@ const LINKS = {
   github: `https://github.com/${GITHUB_USER}`,
   linkedin: "https://www.linkedin.com/in/sayan-bakshi-103546204/",
 };
-
-const SKILLS = ["Go", "C++", "JavaScript", "React", "Postgres", "Kafka", "Python"];
 
 function portStamp(state, count) {
   if (state === "error") return "OFFLINE MODE";
@@ -33,6 +32,7 @@ function App() {
   return (
     <div id="page">
       <div className="topNav">
+        <ThemeToggle />
         <a
           className="navLink mono"
           href="https://banjobyster.github.io/bysters/"
@@ -40,10 +40,9 @@ function App() {
           rel="noreferrer"
           aria-label="bysters: the open-source framework these creatures run on"
         >
-          <i aria-hidden="true" />
+          <IconByster />
           BYSTERS
         </a>
-        <ThemeToggle />
       </div>
       <Cable />
       <BystersOverlay dataReady={state === "ready"} />
@@ -233,23 +232,21 @@ function App() {
         </h2>
         <div className="aboutBody" data-walk>
           <p>
-            Sayan here. I like taking systems apart to see what makes them
-            tick, then building my own from scratch; most of the projects
-            above started exactly that way. Day to day that curiosity goes
-            into the server side of products: services, data flows, and the
-            internal tooling other engineers build on.
+            Hi! I am Sayan Bakshi, a software engineer working on platform
+            architecture and system reliability: fault-tolerant services,
+            background job processing, and backend infrastructure that holds
+            up under load.
           </p>
           <p>
-            The tiny robots keeping this page running are one of those
-            projects. If a few of them have wandered down here to sit with
-            you, that is their doing, not mine.
+            Outside of work I love competitive programming; I had a good run
+            near the top of the global leaderboards back when I competed
+            actively, and the habits it drilled in still shape how I write
+            code. The rest of my free time goes into building things to see
+            what makes them tick: a ray tracer, neural networks that run in
+            the browser, and the tiny robots keeping this page alive. If a
+            few of them have wandered down here to sit with you, that is
+            their doing, not mine.
           </p>
-          <p className="chipsLabel mono" aria-hidden="true">TOOLKIT</p>
-          <ul className="chips mono" aria-label="Toolkit">
-            {SKILLS.map((s) => (
-              <li key={s}>{s}</li>
-            ))}
-          </ul>
         </div>
       </section>
 

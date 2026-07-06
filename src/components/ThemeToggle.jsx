@@ -54,8 +54,7 @@ export default function ThemeToggle() {
       onClick={toggle}
       aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
     >
-      <i aria-hidden="true" />
-      {theme === "light" ? "LIGHT" : "DARK"}
+      <span aria-hidden="true">{theme === "light" ? "☀️" : "🌙"}</span>
     </button>
   );
 }

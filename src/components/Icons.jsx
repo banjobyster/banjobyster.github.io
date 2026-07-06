@@ -65,6 +65,33 @@ export function IconArrowDown(props) {
   );
 }
 
+export function IconByster(props) {
+  // The blue byster from the library demo, shrunk to a glyph: rounded TV
+  // head, lit pixel eyes, two accordion legs. Fixed palette on purpose; it
+  // is a mascot, not a themed icon.
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      {...props}
+    >
+      <rect x="2.5" y="2.5" width="19" height="14" rx="4.5" fill="#2f42f0" />
+      <rect x="5.5" y="5.5" width="13" height="8" rx="2.5" fill="#0a1030" />
+      <rect x="8" y="7.5" width="2.4" height="3.6" rx="0.6" fill="#9fd1ff" />
+      <rect x="13.6" y="7.5" width="2.4" height="3.6" rx="0.6" fill="#9fd1ff" />
+      <path
+        d="M8.5 17v4.5M15.5 17v4.5"
+        stroke="#2f42f0"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeDasharray="1.6 1.1"
+      />
+    </svg>
+  );
+}
+
 export function IconExternal(props) {
   return (
     <svg
