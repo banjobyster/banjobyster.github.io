@@ -77,11 +77,14 @@ const FACES = {
     f.px(11, 2, tw ? 1 : 3);
   },
   sad(f) {
-    // Outer-drooping lids, a small wobbly mouth.
+    // Outer-drooping lids over pupils that still track, a small wobbly mouth.
+    const g = Math.round(f.gazeX);
     f.px(2, 2, 2);
     f.block(2, 3, 3, 1, 1);
     f.px(9, 2, 2);
     f.block(7, 3, 3, 1, 1);
+    f.px(Math.min(Math.max(3 + g, 2), 4), 4, 2);
+    f.px(Math.min(Math.max(8 + g, 7), 9), 4, 2);
     f.px(4, 8, 2);
     f.block(5, 7, 2, 1, 2);
     f.px(7, 8, 2);
@@ -135,22 +138,32 @@ const FACES = {
     f.px(Math.min(Math.max(7 + g, 6), 8), 4, 3);
     f.px(5, 7, 1);
   },
-  grit(f) {
-    // Playing at being the engineer: brows down, mouth set, very serious.
+  mimicChunk(f) {
+    // The Chunk act, dialed to eleven: his brow slashes, his narrowed hot
+    // eyes (pupils pinned on the real engineer), his gritted jaw. On the
+    // coarse twin grid every borrowed feature is oversized and unmistakable.
+    const g = Math.round(f.gazeX);
+    f.px(0, 0, 2);
     f.px(1, 1, 2);
     f.px(2, 2, 2);
+    f.px(11, 0, 2);
     f.px(10, 1, 2);
     f.px(9, 2, 2);
-    f.block(2, 3, 3, 1, 2);
-    f.block(7, 3, 3, 1, 2);
-    f.block(4, 7, 4, 1, 2);
+    f.block(1, 3, 4, 2, 2);
+    f.px(Math.min(Math.max(2 + g, 1), 4), 4, 3);
+    f.block(7, 3, 4, 2, 2);
+    f.px(Math.min(Math.max(8 + g, 7), 10), 4, 3);
+    for (let x = 3; x <= 8; x++) f.px(x, 7, x % 2 ? 2 : 1);
   },
-  focus(f) {
-    // Playing at being the operator: a little scanning blip, chin up.
-    const c = Math.round((Math.sin(f.t * 4) * 0.5 + 0.5) * (f.w - 3));
-    f.block(c, 2, 3, 2, 2);
-    f.px(c + 1, 3, 3);
-    f.block(4, 7, 4, 1, 1);
+  mimicOtto(f) {
+    // The Otto act: his round gauge eyes (needles tracking the model) over
+    // his graph-line mouth, blip included. A pocket dashboard.
+    f.eye(1, 1, 4, 4, true);
+    f.eye(7, 1, 4, 4, true);
+    const c = 3 + (((f.t * 8) | 0) % 6);
+    f.block(3, 7, 6, 1, 1);
+    f.px(c, 6, 3);
+    f.px(c, 7, 3);
   },
   sleepy(f) {
     f.block(2, 4, 3, 1, 1);
@@ -171,7 +184,7 @@ function makeTwin(name, col, accessory) {
     face: {
       w: 12,
       h: 9,
-      animated: ['excited', 'cry', 'dizzy', 'panic', 'focus', 'peek'],
+      animated: ['excited', 'cry', 'dizzy', 'panic', 'mimicChunk', 'mimicOtto', 'peek'],
       exprs: FACES,
     },
 

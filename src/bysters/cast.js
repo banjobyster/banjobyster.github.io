@@ -11,15 +11,20 @@
 //   where the last of the feed powers the contact neon.
 //
 // THE SOCIETY
-//   Kip and Pip, tiny twin toddlers, play tag across the machine. Their
-//   poking pops card plugs, jams the pipeline, stalls the archive, and once
-//   in a blue moon closes the intake itself, browning out the whole page.
-//   Chunk, the field engineer, treks the trunk re-seating plugs and freeing
-//   the archive reels. Otto, the conductor, lives on the pipeline console
-//   and owns the head of the line: the pipeline and the intake. Nib, the
-//   lamplighter, keeps to the neon at the end of the line and relights it.
+//   Kip and Pip, tiny twin toddlers, play tag across the machine, idolize
+//   the grown-ups (trekking over to visibly ape them), and their poking
+//   pops card plugs, jams the pipeline, stalls the archive, and once in a
+//   blue moon closes the intake itself, browning out the whole page.
+//   Chunk, the field engineer, is the ONLY fixer: every broken station on
+//   the page is his work order. Otto, the conductor, lives on the console
+//   catwalk and never lifts a wrench: he presents the machine to your
+//   cursor, goes into visible alarm while anything is broken, and cheers
+//   when it all comes back. Nib, the lamplighter, keeps to the neon at the
+//   end of the line and relights it.
 //   When a visitor scrolls to the About section, every territory in the
-//   cast re-aims there and the whole family drifts in for a reunion.
+//   cast re-aims there and the whole family drifts in for a reunion; and
+//   wherever the visitor lingers, far-from-home territories project into
+//   the viewport, so the reader always has company.
 //
 // ANTI-LOOP DESIGN: chases are fatigue-gated (run, rest, run), sabotage is
 // probability-gated with windows long enough to actually complete the trek,
@@ -60,28 +65,84 @@ const isIntake = (fx) => fx.type === "intake";
 const isArchive = (fx) => fx.type === "archive";
 const isNeon = (fx) => fx.type === "neon";
 
+// --- the machine's health, in one table ------------------------------------
+// Every station: what broken and healthy look like, and whose job it is.
+// This single table powers Chunk's work order (owner: chunk, in triage
+// order: the page-wide outage first), Nib's lamplighting (owner: nib), and
+// Otto's alarm/all-clear (any bad state at all). Add a station here and
+// everyone's behavior follows.
+const STATIONS = [
+  { match: isIntake, bad: "closed", good: "open", owner: "chunk" },
+  { match: isPipeline, bad: "jammed", good: "flowing", owner: "chunk" },
+  { match: isPort, bad: "cut", good: "linked", owner: "chunk" },
+  { match: isArchive, bad: "offline", good: "syncing", owner: "chunk" },
+  { match: isNeon, bad: "off", good: "on", owner: "nib" },
+];
+const isBroken = (fx) => STATIONS.some((s) => s.match(fx) && fx.state === s.bad);
+
+// One byster, one work order: try each owned job in table order and bid the
+// first that has work, so a single fatigue shift can govern all of it. Each
+// line is the same generic operator; triage priority is just row order.
+function workOrder(owner, { priority = 60, face = "grit" } = {}) {
+  const ops = STATIONS.filter((s) => s.owner === owner).map((s) =>
+    operateFixtures({ match: (fx) => s.match(fx) && fx.state === s.bad, drive: s.good, face, priority }),
+  );
+  return {
+    id: `work-order-${owner}`,
+    priority,
+    channels: ["locomotion", "interact", "face"],
+    update(world, self) {
+      for (const op of ops) {
+        const bid = op.update(world, self);
+        if (bid) return bid;
+      }
+      return null;
+    },
+  };
+}
+
 // --- territory: a home preference, not a cage -------------------------------
 // Built entirely from perch's public pick seam: every `every` seconds the
 // byster settles somewhere NEAR its anchor element instead of the library
 // default (the highest point on the page, which slowly migrates the whole
 // cast to the top). The jitter varies the chosen spot so homing never becomes
-// "always the same vertex". And one shared rule makes the reunion emergent:
-// while the About section is on screen, EVERY territory re-aims at it, so the
-// whole cast drifts together, then disperses home when the visitor scrolls
-// on. Nothing is locked anywhere; urgent work still preempts the outing.
+// "always the same vertex". Two shared rules make the social beats emergent:
+// while the About section is on screen, EVERY territory re-aims at it (the
+// reunion); and a home anchor far outside the current viewport aims at its
+// projection INTO the viewport instead (same x, y clamped inside), so
+// whoever is reading always has company. Both are biases, never cages;
+// urgent work still preempts the outing.
 const GATHER_SEL = "#about .aboutBody";
+
+// Viewport top in page coordinates. The one scroll read, so headless
+// verification can simulate any reading position by stubbing window.scrollY
+// (and window.innerHeight) without real scrolling.
+const viewTop = () => window.scrollY || 0;
 
 function inView(el) {
   if (!el) return false;
   const r = el.getBoundingClientRect();
-  return r.top < window.innerHeight * 0.85 && r.bottom > window.innerHeight * 0.1;
+  const d = document.documentElement.getBoundingClientRect();
+  const top = viewTop();
+  const vh = window.innerHeight || 800;
+  return r.top - d.top < top + vh * 0.85 && r.bottom - d.top > top + vh * 0.1;
 }
 
-function anchorPoint(sel) {
-  const el = document.querySelector(sel);
-  if (!el) return null;
+// An element's center in page coordinates via pure rect math (no scroll
+// read), so anchors stay correct under a stubbed viewport.
+function pageAnchor(el) {
   const r = el.getBoundingClientRect();
-  return { x: r.left + window.scrollX + r.width / 2, y: r.top + window.scrollY + r.height / 2 };
+  const d = document.documentElement.getBoundingClientRect();
+  return { x: r.left - d.left + r.width / 2, y: r.top - d.top + r.height / 2 };
+}
+
+// Anchors near the view keep zone rules; far-off ones project into it.
+function towardView(c) {
+  const top = viewTop();
+  const vh = window.innerHeight || 800;
+  if (c.y > top - vh * 0.5 && c.y < top + vh * 1.5) return c;
+  const m = vh * 0.22;
+  return { x: c.x, y: Math.min(Math.max(c.y, top + m), top + vh - m) };
 }
 
 function territory(homeSel, { every = 12, dwell = 4, face = "idle", priority = 34 } = {}) {
@@ -92,11 +153,77 @@ function territory(homeSel, { every = 12, dwell = 4, face = "idle", priority = 3
     priority,
     pick: (p) => {
       const gathering = inView(document.querySelector(GATHER_SEL));
-      const c = anchorPoint(gathering ? GATHER_SEL : homeSel) || anchorPoint(homeSel);
-      if (!c) return -p.y;
+      const el = document.querySelector(gathering ? GATHER_SEL : homeSel) || document.querySelector(homeSel);
+      if (!el) return -p.y;
+      const c = towardView(pageAnchor(el));
       return -Math.hypot(p.x - c.x, p.y - c.y) * (0.75 + Math.random() * 0.5);
     },
   });
+}
+
+// --- mimicry, made legible ---------------------------------------------------
+// A twin picks a grown-up, treks right up to it, then falls in step BESIDE
+// it: a dedicated copycat face, the adult's pace, eyes locked on the model.
+// approach + reactTo merged into ONE behavior so a single sometimes() gates
+// the whole episode (trek and copy never desync) and the copy channels
+// override the trek's while the adult is within `beside`.
+function mimic(adult, { face, pace: paceMul, beside = 150, priority = 72 } = {}) {
+  const trek = approach((v) => v.name === adult, { notice: 4000, face: "curious", priority });
+  const copy = reactTo((v) => v.name === adult, { radius: beside, face, pace: paceMul, gaze: true, priority });
+  return {
+    id: `mimic-${adult}`,
+    priority,
+    channels: [...new Set([...trek.channels, ...copy.channels])],
+    update(world, self) {
+      const go = trek.update(world, self);
+      const ape = copy.update(world, self);
+      if (!go && !ape) return null;
+      return { ...(go || {}), ...(ape || {}) };
+    },
+  };
+}
+
+// --- the conductor's temperament ---------------------------------------------
+// Otto never fixes anything. While ANY station is bad he makes it everyone's
+// problem: alarm face, agitated pace, quick pacing of his catwalk (the same
+// territory primitive on a frantic cadence). The gate is the machine's
+// health, read from the same store the operators use.
+function conductorAlarm({ priority = 58 } = {}) {
+  const pacing = territory("#ci-console", { every: 2.1, dwell: 0.9, face: "alarm", priority });
+  const siren = mood("alarm", { priority });
+  const surge = liveliness({ base: DERATE * 1.55, vary: 0.25, every: 0.9, priority });
+  return {
+    id: "conductor-alarm",
+    priority,
+    channels: ["locomotion", "face", "pace"],
+    update(world, self) {
+      if (!world.fixtures || !world.fixtures.all().some(isBroken)) return null;
+      return { ...siren.update(world, self), ...surge.update(world, self), ...(pacing.update(world, self) || {}) };
+    },
+  };
+}
+
+// ...and the payoff: the moment the last fault clears, a tada burst, so a
+// repair lands as a scene (Chunk wipes his brow, Otto takes the credit).
+function conductorCheer({ priority = 57, hold = 3.4 } = {}) {
+  const cheer = mood("tada", { priority });
+  const bounce = liveliness({ base: DERATE * 1.4, vary: 0.35, every: 0.7, priority });
+  return {
+    id: "conductor-cheer",
+    priority,
+    channels: ["face", "pace"],
+    _broken: false,
+    _left: 0,
+    update(world, self) {
+      if (!world.fixtures) return null;
+      const broken = world.fixtures.all().some(isBroken);
+      if (this._broken && !broken) this._left = hold;
+      this._broken = broken;
+      if (broken || this._left <= 0) return null;
+      this._left -= world.dt || 0;
+      return { ...cheer.update(world, self), ...bounce.update(world, self) };
+    },
+  };
 }
 
 // One twin, parameterized by temperament. `other` is the sibling's name.
@@ -165,9 +292,14 @@ function twin({ name, character, other, bold }) {
         ? [sometimes(followCursor({ face: "excited", near: 70 }), 0.5, { window: 9 })]
         : [fleeCursor({ radius: 130, face: "peek", speed: 1.4 }), avoidCursorGaze()]),
 
-      // -- mimicry: copy the nearby grown-up for a bit, then get distracted --
-      sometimes(reactTo((v) => v.name === "chunk", { radius: 150, face: "grit", pace: 0.55, priority: 16, gaze: true }), 0.6, { window: 7 }),
-      sometimes(reactTo((v) => v.name === "otto", { radius: 150, face: "focus", pace: 0.8, priority: 16, gaze: true }), 0.6, { window: 7 }),
+      // -- mimicry: idolize the grown-ups. Trek over, fall in step, and APE
+      //    them: Chunk's brow-slash scowl at a heavy crawl, Otto's gauge-and-
+      //    graph dashboard at a conductor's stride, eyes pinned on the model
+      //    the whole time. Windows are long so an episode reads as a scene,
+      //    not a flicker, and while it runs the twin even forgets to be
+      //    scared of the engineer (priority above the guilt flee) --
+      sometimes(mimic("chunk", { face: "mimicChunk", pace: 0.42 }), 0.4, { window: bold ? 15 : 17 }),
+      sometimes(mimic("otto", { face: "mimicOtto", pace: 1.25 }), 0.4, { window: bold ? 19 : 23 }),
 
       // -- separation anxiety: when idle and far apart, seek the sibling --
       approach((v) => v.name === other, { notice: 4000, face: bold ? "sad" : "cry", priority: 24 }),
@@ -193,9 +325,11 @@ export const CAST = [
   twin({ name: "kip", character: KIP, other: "pip", bold: true }),
   twin({ name: "pip", character: PIP, other: "kip", bold: false }),
 
-  // Chunk, the field engineer: re-seats popped card plugs and frees the
-  // archive reels, in fatigue-gated shifts. While the `resting` tag is up
-  // the twins stop fearing him, so the rivalry has a truce beat built in.
+  // Chunk, the field engineer, THE fixer: every broken station on the page
+  // is one work order (intake, pipeline, card ports, archive, in triage
+  // order), worked in fatigue-gated shifts long enough to finish a full
+  // cross-page trek. While the `resting` tag is up the twins stop fearing
+  // him, so the rivalry has a truce beat built in.
   {
     name: "chunk",
     character: CHUNK,
@@ -204,11 +338,7 @@ export const CAST = [
     spawnAt: ".hatch",
     planner: whimsicalPlanner(WHIMSY.chunk),
     behaviors: [
-      fatigue(
-        operateFixtures({ match: (fx) => isPort(fx) && fx.state === "cut", drive: "linked", face: "grit", priority: 60 }),
-        { runFor: 8, restFor: 4.5, face: "wipe", tag: "resting", minPace: 0.4 },
-      ),
-      operateFixtures({ match: (fx) => isArchive(fx) && fx.state === "offline", drive: "syncing", face: "grit", priority: 56 }),
+      fatigue(workOrder("chunk", { priority: 60 }), { runFor: 20, restFor: 3.2, face: "wipe", tag: "resting", minPace: 0.55 }),
       territory(".hatch", { every: 13, dwell: 5.5, face: "wipe", priority: 32 }),
       wander(),
       watchCursor(),
@@ -218,9 +348,10 @@ export const CAST = [
     ],
   },
 
-  // Otto, the conductor: owns the head of the line. He lives ON the console
-  // (tight territory cadence), restores the pipeline, reopens the intake,
-  // and now and then glides over to present things to your cursor.
+  // Otto, the conductor: lives on the console catwalk and never repairs a
+  // thing. He patrols the console, presents the machine to your cursor with
+  // a tada, panics visibly (alarm face, frantic catwalk pacing) while
+  // anything on the page is broken, and cheers the moment it all clears.
   {
     name: "otto",
     character: OTTO,
@@ -229,10 +360,10 @@ export const CAST = [
     spawnAt: "#ci-console",
     planner: whimsicalPlanner(WHIMSY.otto),
     behaviors: [
-      operateFixtures({ match: (fx) => isIntake(fx) && fx.state === "closed", drive: "open", face: "alarm", priority: 64 }),
-      operateFixtures({ match: (fx) => isPipeline(fx) && fx.state === "jammed", drive: "flowing", face: "alarm", priority: 60 }),
-      sometimes(followCursor({ near: 170, face: "tada" }), 0.4, { window: 12 }),
-      territory("#ci-console", { every: 6.1, dwell: 7, face: "calm", priority: 30 }),
+      conductorAlarm(),
+      conductorCheer(),
+      sometimes(followCursor({ near: 170, face: "tada" }), 0.45, { window: 11 }),
+      territory("#ci-console", { every: 5.9, dwell: 4.5, face: "calm", priority: 30 }),
       wander(),
       watchCursor(),
       flourish(["tada", "calm"], { every: 8.9, hold: 1.6 }),
@@ -256,7 +387,7 @@ export const CAST = [
     spawnAt: ".contactBody",
     planner: whimsicalPlanner(WHIMSY.nib),
     behaviors: [
-      operateFixtures({ match: (fx) => isNeon(fx) && fx.state === "off", drive: "on", face: "happy", priority: 65 }),
+      workOrder("nib", { priority: 65, face: "happy" }),
       // brushing the lever: now and then he douses his own sign by accident
       // and relights it (with the zap). Short window + tiny p, because he
       // LIVES beside this fixture: a long active window would have him flap

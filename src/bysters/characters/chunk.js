@@ -56,15 +56,17 @@ const FACES = {
     f.block(6, 9, 4, 1, 1);
   },
   grit(f) {
-    // On the job: brows down hard, eyes narrowed hot, jaw set.
+    // On the job: brows down hard, eyes narrowed hot but still on the
+    // world (pupils track), jaw set.
+    const g = Math.round(f.gazeX);
     f.px(2, 2, 2);
     f.px(3, 3, 2);
     f.px(13, 2, 2);
     f.px(12, 3, 2);
     f.block(3, 4, 4, 2, 2);
-    f.px(4, 4, 3);
+    f.px(Math.min(Math.max(4 + g, 3), 6), 4, 3);
     f.block(9, 4, 4, 2, 2);
-    f.px(10, 4, 3);
+    f.px(Math.min(Math.max(10 + g, 9), 12), 4, 3);
     for (let x = 5; x <= 10; x++) f.px(x, 9, x % 2 ? 2 : 1);
   },
   wipe(f) {

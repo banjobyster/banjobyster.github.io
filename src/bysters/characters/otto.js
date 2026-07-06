@@ -1,6 +1,7 @@
-// Otto, the operator: a calm control-room byster with a wide flat wall
-// monitor for a head. His face is a tiny dashboard: gauge eyes and a live
-// graph-line mouth. Smooth, intentional movement; nothing rattles him.
+// Otto, the conductor: a control-room showman with a wide flat wall monitor
+// for a head. His face is a tiny dashboard: gauge eyes and a live graph-line
+// mouth. Smooth, intentional movement while all is well; theatrical alarm
+// the moment anything on the machine breaks (he presents, he never repairs).
 
 const COL = {
   bezel: 0x3a4148,
@@ -85,11 +86,14 @@ const FACES = {
     f.block(6, 8, 4, 1, 3);
   },
   alarm(f) {
-    // Something is jammed: gauges pinned wide, the graph spiking hard.
+    // Something is broken: gauges pinned wide (pupils locked on whatever he
+    // is fretting at), the graph spiking hard.
+    const g = Math.round(f.gazeX);
+    const gy = Math.round(f.gazeY * 0.8);
     f.block(2, 2, 5, 5, 1);
-    f.px(4, 4, 3);
+    f.px(Math.min(Math.max(4 + g, 3), 5), Math.min(Math.max(4 + gy, 3), 5), 3);
     f.block(9, 2, 5, 5, 1);
-    f.px(11, 4, 3);
+    f.px(Math.min(Math.max(11 + g, 10), 12), Math.min(Math.max(4 + gy, 3), 5), 3);
     const k = (f.t * 12) | 0;
     for (let x = 3; x <= 12; x++) f.px(x, 9 - ((x + k) % 3), 2);
   },
