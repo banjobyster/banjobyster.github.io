@@ -61,6 +61,7 @@ export const FALLBACK = [
     link: "https://banjobyster.github.io/bysters/",
     accent: "rgba(47, 66, 240, 0.9)",
     order: 35,
+    vibeCoded: true,
   },
   {
     title: "Ray Tracer",
@@ -91,5 +92,6 @@ export const FALLBACK = [
     link: "https://github.com/banjobyster/BlockForgeVR",
     accent: "rgba(216, 122, 106, 0.9)",
     order: 90,
+    vibeCoded: true,
   },
 ];
