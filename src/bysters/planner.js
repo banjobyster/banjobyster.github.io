@@ -3,31 +3,39 @@
 // spec's `planner`). Same contract and step shape as the library's planRoute:
 //   (graph, startVertexId, goalVertexId, caps) => steps | null
 //
-// The one difference: each plan call prices every edge with a random markup
+// The differences: each plan call prices every edge with a random markup
 // of up to `whimsy` (0 = always the strict shortest path, 1 = up to double
-// cost), stable within the call. Near-tied routes then win at random, so a
-// byster stops grinding the exact same staircase back and forth when two
-// ways round are almost equal. This is variety by METRIC, not by memory:
-// stateless, no forbidden-edge lists, no "don't go back" special case, and
-// the genuinely shortest route still wins most of the time because the
-// markup only ever inflates.
+// cost), stable within the call, so near-tied routes win at random and a
+// byster stops grinding the exact same staircase back and forth. And an
+// optional `wallTax` surcharges every edge that lands on a non-top surface
+// (a wall or an underside), so a heavyset byster prefers to travel along
+// the tops of things and only climbs when the wall is genuinely the only
+// way (a bias, never a ban: reachability is untouched). This is variety
+// and gait-dignity by METRIC, not by memory: stateless, no forbidden-edge
+// lists, no "don't go back" special case, and every markup only inflates,
+// so the euclidean heuristic stays admissible.
 
 import { edgeAllowed } from "@banjobyster/bysters";
 
-export function whimsicalPlanner(whimsy = 0.5) {
+export function whimsicalPlanner(whimsy = 0.5, { wallTax = 0 } = {}) {
   return (graph, startId, goalId, caps) => {
     const byId = (id) => graph.vertices[id];
     const goal = byId(goalId);
     if (!goal || !byId(startId)) return null;
     const h = (v) => Math.hypot(v.x - goal.x, v.y - goal.y);
 
-    // One random markup per edge per plan. Inflation keeps the euclidean
-    // heuristic admissible, so this stays a correct A* under the new metric.
+    const offTop = (v) => {
+      const s = graph.surfaces[v.surface];
+      return !!s && s.side !== "top";
+    };
+
+    // One price per edge per plan: the whimsy markup, times the wall tax
+    // when the edge lands somewhere a heavy byster would rather not walk.
     const priced = new Map();
     const cost = (e) => {
       let c = priced.get(e);
       if (c == null) {
-        c = e.cost * (1 + Math.random() * whimsy);
+        c = e.cost * (1 + Math.random() * whimsy) * (wallTax && offTop(byId(e.to)) ? 1 + wallTax : 1);
         priced.set(e, c);
       }
       return c;

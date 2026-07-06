@@ -148,7 +148,10 @@ function towardView(c) {
   return { x: c.x, y: Math.min(Math.max(c.y, top + m), top + vh - m) };
 }
 
-function territory(homeSel, { every = 12, dwell = 4, face = "idle", priority = 34 } = {}) {
+// `homebody: true` opts a byster out of the viewport projection (never out
+// of the reunion): the shy ones stay in their corner of the machine even
+// when the visitor is reading somewhere else.
+function territory(homeSel, { every = 12, dwell = 4, face = "idle", priority = 34, homebody = false } = {}) {
   return perch({
     every,
     dwell,
@@ -158,7 +161,8 @@ function territory(homeSel, { every = 12, dwell = 4, face = "idle", priority = 3
       const gathering = inView(document.querySelector(GATHER_SEL));
       const el = document.querySelector(gathering ? GATHER_SEL : homeSel) || document.querySelector(homeSel);
       if (!el) return -p.y;
-      const c = towardView(pageAnchor(el));
+      const home = pageAnchor(el);
+      const c = homebody ? home : towardView(home);
       return -Math.hypot(p.x - c.x, p.y - c.y) * (0.75 + Math.random() * 0.5);
     },
   });
@@ -413,8 +417,13 @@ function twin({ name, character, other, bold }) {
 
 // Route temperament, through the framework's planner seam: the twins take
 // gleefully scenic near-ties, Nib meanders, the working adults stay mostly
-// efficient with just enough variance to never grind one staircase.
+// efficient with just enough variance to never grind one staircase. The
+// heavies also pay a wall tax: routes along the tops of things cost normal,
+// walls and undersides cost triple-and-a-half, so Chunk and Otto keep their
+// feet down and leave the wall-crawling to the little ones (a bias, not a
+// ban: if a wall is the only way, they still take it).
 const WHIMSY = { twins: 0.9, chunk: 0.25, otto: 0.2, nib: 0.7 };
+const HEAVY_TAX = { wallTax: 2.5 };
 
 // Cast order is draw order (each renderer is added to the stage in turn), so
 // the big adults come first and the tiny bysters last: when a copycat twin
@@ -431,7 +440,7 @@ export const CAST = [
     caps: HEAVY_CAPS,
     speedScale: DERATE,
     spawnAt: ".hatch",
-    planner: whimsicalPlanner(WHIMSY.chunk),
+    planner: whimsicalPlanner(WHIMSY.chunk, HEAVY_TAX),
     behaviors: [
       fatigue(workOrder("chunk", { priority: 60 }), { runFor: 30, restFor: 2.8, face: "wipe", tag: "resting", minPace: 0.7 }),
       brownoutHustle(),
@@ -454,7 +463,7 @@ export const CAST = [
     caps: HEAVY_CAPS,
     speedScale: DERATE,
     spawnAt: "#ci-console",
-    planner: whimsicalPlanner(WHIMSY.otto),
+    planner: whimsicalPlanner(WHIMSY.otto, HEAVY_TAX),
     behaviors: [
       conductorAlarm(),
       conductorCheer(),
@@ -496,7 +505,9 @@ export const CAST = [
       flee((v) => v.name === "kip" || v.name === "pip", { radius: 70, face: "startle", priority: 72 }),
       approach((v) => v.name === "kip" || v.name === "pip", { notice: 300, face: "peek", priority: 36 }),
       avoidCursorGaze(),
-      territory(".neonWrap", { every: 9.1, dwell: 4, face: "dream", priority: 30 }),
+      // the one homebody: Nib never chases the visitor's viewport; he keeps
+      // to his neon and only leaves for the About reunion
+      territory(".neonWrap", { every: 9.1, dwell: 4, face: "dream", priority: 30, homebody: true }),
       wander(),
       watchNearest(),
       flourish(["dream", "peek", "happy"], { every: 9.7, hold: 2 }),
