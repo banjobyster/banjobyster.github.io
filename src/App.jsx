@@ -4,6 +4,7 @@ import ProjectCard from "./components/ProjectCard";
 import RepoCard from "./components/RepoCard";
 import Cable from "./components/Cable";
 import ThemeToggle from "./components/ThemeToggle";
+import BystersOverlay from "./components/BystersOverlay";
 import {
   IconGitHub,
   IconLinkedIn,
@@ -45,13 +46,14 @@ function App() {
         <ThemeToggle />
       </div>
       <Cable />
+      <BystersOverlay dataReady={state === "ready"} />
 
       <header className="hero region">
-        <h1 className="heroName">Sayan Bakshi</h1>
-        <p className="heroRole">
+        <h1 className="heroName" data-walk>Sayan Bakshi</h1>
+        <p className="heroRole" data-walk>
           Software engineer: backend systems, platform tooling, and competitive programming.
         </p>
-        <div className="heroSocials">
+        <div className="heroSocials" data-walk>
           <a href={LINKS.github} target="_blank" rel="noreferrer" aria-label="GitHub">
             <IconGitHub />
           </a>
@@ -62,7 +64,7 @@ function App() {
             <IconMail />
           </a>
         </div>
-        <div className="portRow">
+        <div className="portRow" data-walk>
           <span className="portJack" id="port" aria-hidden="true">
             <i />
           </span>
@@ -72,6 +74,47 @@ function App() {
             <i className="stampLed" aria-hidden="true" />
             {portStamp(state, featured.length + repos.length)}
           </span>
+        </div>
+
+        {/* The deploy pipeline: a wall console in the hero's landing space.
+            Otto keeps it flowing; the twins (and you) can jam it. Its top is
+            terrain, so its operator patrols the console itself. */}
+        <div className="ciConsole" id="ci-console" data-walk>
+          <div className="ciHead mono">
+            <span>DEPLOY PIPELINE</span>
+            <span className="ciId">CI-01</span>
+          </div>
+          <div className="ciStages" aria-hidden="true">
+            <span className="ciStage" data-stage="build">
+              <i className="ciDot" />
+              BUILD
+            </span>
+            <span className="ciTrack t1">
+              <i className="ciPacket" />
+            </span>
+            <span className="ciStage" data-stage="test">
+              <i className="ciDot" />
+              TEST
+            </span>
+            <span className="ciTrack t2">
+              <i className="ciPacket" />
+            </span>
+            <span className="ciStage" data-stage="deploy">
+              <i className="ciDot" />
+              DEPLOY
+            </span>
+          </div>
+          <span
+            className="fx fxPipeline"
+            data-fixture="pipeline"
+            data-fixture-id="ci-main"
+            data-states="flowing jammed"
+            data-state="flowing"
+            data-transitions="flowing>jammed jammed>flowing"
+            role="button"
+            tabIndex={0}
+            aria-label="deploy pipeline: click to jam or restore"
+          />
         </div>
 
         <a className="scrollCue mono" href="#featured">
@@ -138,7 +181,7 @@ function App() {
           About
           <span className="headRule" aria-hidden="true" />
         </h2>
-        <div className="aboutBody">
+        <div className="aboutBody" data-walk>
           <p>
             Sayan here. I like taking systems apart to see what makes them
             tick, then building my own from scratch; most of the projects
@@ -160,21 +203,35 @@ function App() {
           Contact
           <span className="headRule" aria-hidden="true" />
         </h2>
-        <div className="contactBody">
+        <div className="contactBody" data-walk>
           <a className="contactMail" href={`mailto:${EMAIL}`}>
             {EMAIL}
           </a>
-          <div className="contactLinks">
+          {/* The contact neon: a tube that frames the links. Nib relights it
+              when it goes dark; switching it off is the visitor's job. */}
+          <div className="contactLinks neonWrap">
+            <span className="neonTube" aria-hidden="true" />
             <a href={LINKS.github} target="_blank" rel="noreferrer">
               <IconGitHub /> GITHUB
             </a>
             <a href={LINKS.linkedin} target="_blank" rel="noreferrer">
               <IconLinkedIn /> LINKEDIN
             </a>
+            <span
+              className="fx fxNeon"
+              data-fixture="neon"
+              data-fixture-id="contact-neon"
+              data-states="on off"
+              data-state="on"
+              data-transitions="on>off off>on"
+              role="button"
+              tabIndex={0}
+              aria-label="contact neon: click to switch"
+            />
           </div>
         </div>
 
-        <div className="footerBar">
+        <div className="footerBar" data-walk>
           <span className="cableEndSocket" id="cableEnd" aria-hidden="true" />
           <span className="mono">© 2026 SAYAN BAKSHI</span>
           <span className="mono">EOF</span>

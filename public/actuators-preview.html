@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fixture gallery</title>
+<link rel="stylesheet" href="./bysters-fixtures.css" />
+<style>
+  /* Standalone theme vars (mirrors src/index.css) so the shared fixture
+     stylesheet renders here exactly as it does on the site. */
+  :root[data-theme="light"] {
+    --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    --bg: #e9e5da; --panel: #f4f1e9; --screen: #23211b; --ink: #26231b;
+    --ink-soft: #43402f; --muted: #6f6959; --line: #c6bfac; --line-soft: #d8d2c1;
+    --accent: #1e7a3f; --led: #2fc064; --led-warn: #d9a13b; --led-err: #d96f4a;
+    --led-off: #b5ae9c;
+    --shadow: 0 1px 2px rgba(38,35,27,.07), 0 8px 20px -10px rgba(38,35,27,.16);
+  }
+  :root[data-theme="dark"] {
+    --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    --bg: #191612; --panel: #292419; --screen: #0d0b07; --ink: #f2ecdc;
+    --ink-soft: #d9d1bc; --muted: #aaa089; --line: #4e4732; --line-soft: #393221;
+    --accent: #56d989; --led: #47e381; --led-warn: #e6ac45; --led-err: #ea8058;
+    --led-off: #544c38;
+    --shadow: 0 1px 2px rgba(0,0,0,.45), 0 12px 28px -12px rgba(0,0,0,.62);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 24px 80px; background: var(--bg); color: var(--ink);
+    font-family: ui-monospace, Consolas, monospace; transition: background .2s;
+  }
+  h1 { font-size: 15px; letter-spacing: .12em; }
+  p.hint { color: var(--muted); font-size: 12px; max-width: 60ch; }
+  .row { display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start; margin: 34px 0; }
+  .case { display: flex; flex-direction: column; gap: 14px; }
+  .case > .label { font-size: 11px; letter-spacing: .12em; color: var(--muted); }
+  button {
+    font: inherit; font-size: 11px; letter-spacing: .1em; cursor: pointer;
+    color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 12px;
+  }
+  .bar { display: flex; gap: 10px; }
+  /* minimal mock of the site's project card so the cut-wire cascade shows */
+  .device {
+    position: relative; width: 300px; padding: 14px; border: 1px solid var(--line);
+    border-radius: 12px; background: var(--panel); box-shadow: var(--shadow);
+  }
+  .deviceScreen { display: block; }
+  .screenGlass {
+    display: grid; place-items: center; height: 120px; border-radius: 8px;
+    background: var(--screen); overflow: hidden;
+  }
+  .screenGlass img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .screenIdle { color: var(--led); font-size: 11px; letter-spacing: .18em; }
+  .deviceMeta { display: flex; align-items: center; gap: 10px; margin-top: 12px;
+    color: var(--muted); font-size: 10px; letter-spacing: .12em; }
+  .ledStrip { display: inline-flex; gap: 4px; }
+  .ledStrip i { width: 5px; height: 5px; border-radius: 50%; background: var(--led); }
+  /* mock of the contact links row */
+  .contactLinks { display: flex; gap: 26px; padding: 10px 6px; }
+  .contactLinks a { color: var(--ink); text-decoration: none; font-size: 12px; letter-spacing: .1em; }
+  .neonCase { padding: 26px 60px 26px 30px; }
+  .ciCase { width: min(640px, 92vw); }
+</style>
+</head>
+<body>
+<h1>FIXTURE GALLERY</h1>
+<p class="hint">Every fixture in each of its states, on the shared stylesheet the
+site uses. Click a fixture (or its button) to flip state; toggle the theme to
+check both palettes. On the live page these same states are driven by the
+bysters through the fixture store.</p>
+<div class="bar">
+  <button onclick="document.documentElement.dataset.theme =
+    document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">THEME</button>
+</div>
+
+<div class="row">
+  <div class="case">
+    <span class="label">WIRE · linked (healthy)</span>
+    <div class="device">
+      <span class="fx fxWire" data-state="linked" onclick="flip(this,'linked','cut')"></span>
+      <a class="deviceScreen"><span class="screenGlass"><span class="screenIdle">NO SIGNAL</span></span></a>
+      <div class="deviceMeta"><span>PRJ 01</span>
+        <span class="ledStrip"><i></i><i></i><i></i><i></i><i></i></span></div>
+    </div>
+  </div>
+  <div class="case">
+    <span class="label">WIRE · cut (glitch + smoke)</span>
+    <div class="device">
+      <span class="fx fxWire" data-state="cut" onclick="flip(this,'linked','cut')"></span>
+      <a class="deviceScreen"><span class="screenGlass"><span class="screenIdle">NO SIGNAL</span></span></a>
+      <div class="deviceMeta"><span>PRJ 02</span>
+        <span class="ledStrip"><i></i><i></i><i></i><i></i><i></i></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="case ciCase">
+    <span class="label">PIPELINE · click the beacon to jam / restore</span>
+    <div class="ciConsole">
+      <div class="ciHead"><span>DEPLOY PIPELINE</span><span class="ciId">CI-01</span></div>
+      <div class="ciStages">
+        <span class="ciStage" data-stage="build"><i class="ciDot"></i>BUILD</span>
+        <span class="ciTrack t1"><i class="ciPacket"></i></span>
+        <span class="ciStage" data-stage="test"><i class="ciDot"></i>TEST</span>
+        <span class="ciTrack t2"><i class="ciPacket"></i></span>
+        <span class="ciStage" data-stage="deploy"><i class="ciDot"></i>DEPLOY</span>
+      </div>
+      <span class="fx fxPipeline" data-state="flowing" onclick="flip(this,'flowing','jammed')"></span>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="case">
+    <span class="label">NEON · on</span>
+    <div class="neonCase">
+      <div class="contactLinks neonWrap">
+        <span class="neonTube"></span>
+        <a href="#">GITHUB</a><a href="#">LINKEDIN</a>
+        <span class="fx fxNeon" data-state="on" onclick="flip(this,'on','off')"></span>
+      </div>
+    </div>
+  </div>
+  <div class="case">
+    <span class="label">NEON · off</span>
+    <div class="neonCase">
+      <div class="contactLinks neonWrap">
+        <span class="neonTube"></span>
+        <a href="#">GITHUB</a><a href="#">LINKEDIN</a>
+        <span class="fx fxNeon" data-state="off" onclick="flip(this,'on','off')"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function flip(el, a, b) { el.dataset.state = el.dataset.state === a ? b : a; }
+</script>
+</body>
+</html>

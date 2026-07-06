@@ -98,6 +98,7 @@ export default function Cable() {
         <span
           key={c.y}
           className="clip"
+          data-walk
           style={{ top: c.y, left: c.left }}
         />
       ))}
