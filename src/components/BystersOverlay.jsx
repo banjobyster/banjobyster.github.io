@@ -90,6 +90,22 @@ const BOOT = [
 ];
 let sysLogSeen = -1;
 
+// The fixtures are role="switch": mirror the store onto aria-checked so
+// assistive tech hears state flips, whoever caused them (you or a byster).
+// Checked = the fixture sits in its first declared ("healthy") state. Same
+// cheap trigger as the sys log: only when the store's audit log grows.
+let ariaSeen = -1;
+
+function syncFixtureAria(store) {
+  if (!store || store.log.length === ariaSeen) return;
+  ariaSeen = store.log.length;
+  for (const el of document.querySelectorAll("[data-fixture]")) {
+    const fx = store.fixture(el.dataset.fixtureId);
+    const healthy = (el.dataset.states || "").split(/\s+/)[0];
+    if (fx && healthy) el.setAttribute("aria-checked", String(fx.state === healthy));
+  }
+}
+
 function drawSysLog(store) {
   if (!store || store.log.length === sysLogSeen) return;
   sysLogSeen = store.log.length;
@@ -196,6 +212,7 @@ export default function BystersOverlay({ dataReady }) {
         }
         drawCables(gCable, f);
         drawSysLog(f.store);
+        syncFixtureAria(f.store);
         if (debugOn) {
           if (!gDebug) {
             gDebug = new Graphics();

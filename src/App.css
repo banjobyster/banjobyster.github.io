@@ -367,14 +367,17 @@
   gap: 56px;
 }
 
+/* positioned + overflow visible: the feed socket (bysters-fixtures.css)
+   hangs off the card's bottom edge, so the card cannot clip; the screen
+   well rounds its own outer corners instead */
 .device {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--panel);
   box-shadow: var(--shadow);
-  overflow: hidden;
 }
 
 .deviceScreen {
@@ -383,6 +386,7 @@
   background: var(--screen);
   padding: 14px;
   min-height: 240px;
+  border-radius: 9px 0 0 9px;
 }
 
 .screenGlass {
@@ -445,6 +449,7 @@
 .ledStrip {
   display: inline-flex;
   gap: 4px;
+  margin-left: auto;
 }
 
 .ledStrip i {
@@ -455,39 +460,8 @@
   transition: background 0.18s ease;
 }
 
-.devicePort {
-  position: relative;
-  margin-left: auto;
-  width: 24px;
-  height: 13px;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  background: var(--panel-2);
-}
-
-.devicePort::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 12px;
-  height: 4px;
-  border-radius: 1px;
-  background: var(--screen);
-}
-
-.devicePort::before {
-  content: "";
-  position: absolute;
-  right: -1px;
-  top: -5px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--led-off);
-  transition: background 0.2s ease 0.25s;
-}
+/* the feed socket (.devicePort) is entirely a fixture: look AND placement
+   live in public/bysters-fixtures.css with the other stations */
 
 .deviceTitle {
   font-size: 1.35rem;
@@ -567,11 +541,6 @@
 .device:focus-within .deviceTags li {
   color: var(--accent);
   border-color: var(--accent);
-}
-
-.device:hover .devicePort::before,
-.device:focus-within .devicePort::before {
-  background: var(--accent);
 }
 
 /* ---------------- more on github ---------------- */
@@ -855,6 +824,7 @@
   .deviceScreen {
     min-height: 0;
     aspect-ratio: 16 / 9;
+    border-radius: 9px 9px 0 0;
   }
 
   .cards {
@@ -890,8 +860,7 @@
 
   .ledStrip i,
   .deviceTags li,
-  .screenGlass img,
-  .devicePort::before {
+  .screenGlass img {
     transition: none;
   }
 }

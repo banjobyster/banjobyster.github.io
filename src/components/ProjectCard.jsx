@@ -48,21 +48,6 @@ export default function ProjectCard({
             <i />
             <i />
           </span>
-          {/* The card's feed port IS the fixture: pop the plug and this
-              device loses its signal until someone reseats it. */}
-          <span
-            className="devicePort fx fxPort"
-            data-fixture="port"
-            data-fixture-id={`port-${unit}`}
-            data-states="linked cut"
-            data-state="linked"
-            data-transitions="linked>cut cut>linked"
-            role="button"
-            tabIndex={0}
-            aria-label={`${title} feed port: click to pop or reseat the plug`}
-            style={{ "--pulse": index + 2 }}
-          />
-          <i className="fxTag mono" aria-hidden="true" />
         </div>
         <h3 className="deviceTitle">
           <a href={link} target="_blank" rel="noreferrer">
@@ -88,6 +73,25 @@ export default function ProjectCard({
           </ul>
         ) : null}
       </div>
+      {/* The card is the appliance: its cord drops off the bottom edge into
+          this wall socket (hung below the card by the fixture CSS). Yank the
+          plug and the device loses its signal until someone reseats it. */}
+      <span
+        className="devicePort fx fxPort"
+        data-fixture="port"
+        data-fixture-id={`port-${unit}`}
+        data-states="linked cut"
+        data-state="linked"
+        data-transitions="linked>cut cut>linked"
+        role="switch"
+        aria-checked="true"
+        tabIndex={0}
+        aria-label={`${title} feed plug`}
+        style={{ "--pulse": index + 2 }}
+      >
+        <i className="fxRing" aria-hidden="true" />
+      </span>
+      <i className="fxTag mono" aria-hidden="true" />
     </article>
   );
 }

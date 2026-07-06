@@ -58,10 +58,7 @@
     color: var(--muted); font-size: 10px; letter-spacing: .12em; }
   .ledStrip { display: inline-flex; gap: 4px; }
   .ledStrip i { width: 5px; height: 5px; border-radius: 50%; background: var(--led); }
-  .devicePort {
-    position: relative; margin-left: auto; width: 24px; height: 13px;
-    border: 1px solid var(--line); border-radius: 3px; background: var(--screen);
-  }
+  /* the port socket's look AND placement live in the shared fixture sheet */
   .hatch {
     display: inline-flex; align-items: center; gap: 12px; width: fit-content;
     padding: 9px 14px 9px 11px; border: 1px solid var(--line); border-radius: 7px;
@@ -85,12 +82,14 @@
 </head>
 <body>
 <h1>FIXTURE GALLERY · THE MACHINE'S STATIONS</h1>
-<p class="hint">The page is one system: data enters at the INTAKE, is processed
-by the DEPLOY PIPELINE, feeds each project through its PORT plug, syncs to the
-ARCHIVE datastore, and the last of it lights the EMAIL NEON at EOF. Every
-station is a control you can flip, with a state tag beside it. FEED simulates
-the intake brownout; THEME checks both palettes. On the live page these same
-states are driven by the bysters through the fixture store.</p>
+<p class="hint">The page is one system: data enters at the INTAKE breaker, is
+processed by the DEPLOY PIPELINE's knife switch, feeds each project through its
+PORT plug, syncs to the ARCHIVE datastore behind a latching kill button, and
+the last of it lights the EMAIL NEON on a slide lever at EOF. Every station is
+a control with a moving part; hover one and its tag proposes what a click will
+do. Click or Enter/Space flips it. FEED simulates the intake brownout; THEME
+checks both palettes. On the live page these same states are driven by the
+bysters through the fixture store.</p>
 <div class="bar">
   <button onclick="document.documentElement.dataset.theme =
     document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">THEME</button>
@@ -100,10 +99,12 @@ states are driven by the bysters through the fixture store.</p>
 
 <div class="row">
   <div class="case">
-    <span class="label">INTAKE · breaker (click it)</span>
+    <span class="label">INTAKE · breaker: handle up = open, slammed down = shut</span>
     <div class="portRowMock">
       <span class="lbl">PORT DATA-01</span>
-      <span class="fx fxIntake" data-state="open" style="--pulse:0" onclick="flip(this,'open','closed')"></span>
+      <span class="fx fxIntake" data-state="open" data-states="open closed" style="--pulse:0"
+        role="switch" aria-checked="true" tabindex="0" aria-label="data intake breaker"
+        onclick="flip(this,'open','closed')"><i class="fxRing"></i></span>
       <i class="fxTag"></i>
     </div>
   </div>
@@ -111,7 +112,7 @@ states are driven by the bysters through the fixture store.</p>
 
 <div class="row">
   <div class="case ciCase">
-    <span class="label">PIPELINE · flip the lever on the shoulder</span>
+    <span class="label">PIPELINE · knife switch on the shoulder: blade seated = RUN, thrown = HALT</span>
     <div class="ciConsole" style="margin-top:12px">
       <div class="ciHead"><span>DEPLOY PIPELINE</span><span class="ciId">CI-01</span></div>
       <div class="ciStages">
@@ -121,7 +122,9 @@ states are driven by the bysters through the fixture store.</p>
         <span class="ciTrack t2"><i class="ciPacket"></i></span>
         <span class="ciStage" data-stage="deploy"><i class="ciDot"></i>DEPLOY</span>
       </div>
-      <span class="fx fxPipeline" data-state="flowing" style="--pulse:1" onclick="flip(this,'flowing','jammed')"></span>
+      <span class="fx fxPipeline" data-state="flowing" data-states="flowing jammed" style="--pulse:1"
+        role="switch" aria-checked="true" tabindex="0" aria-label="deploy pipeline switch"
+        onclick="flip(this,'flowing','jammed')"><i class="fxRing"></i></span>
       <i class="fxTag"></i>
     </div>
   </div>
@@ -140,35 +143,41 @@ states are driven by the bysters through the fixture store.</p>
 </div>
 
 <div class="row">
-  <div class="case">
-    <span class="label">PORT · linked (plug seated, breathing)</span>
+  <div class="case" style="padding-bottom:34px">
+    <span class="label">PORT · linked (cord out of the card, plug seated in the wall socket)</span>
     <div class="device">
       <a class="deviceScreen"><span class="screenGlass"><span class="screenIdle">SIGNAL OK</span></span></a>
       <div class="deviceMeta"><span>PRJ 01</span>
-        <span class="ledStrip"><i></i><i></i><i></i><i></i><i></i></span>
-        <span class="devicePort fx fxPort" data-state="linked" style="--pulse:2" onclick="flip(this,'linked','cut')"></span>
-        <i class="fxTag"></i></div>
+        <span class="ledStrip"><i></i><i></i><i></i><i></i><i></i></span></div>
+      <span class="devicePort fx fxPort" data-state="linked" data-states="linked cut" style="--pulse:2"
+        role="switch" aria-checked="true" tabindex="0" aria-label="PRJ 01 feed plug"
+        onclick="flip(this,'linked','cut')"><i class="fxRing"></i></span>
+      <i class="fxTag"></i>
     </div>
   </div>
-  <div class="case">
-    <span class="label">PORT · cut (plug dangles, TV powers off)</span>
+  <div class="case" style="padding-bottom:34px">
+    <span class="label">PORT · cut (plug yanked out, socket bare, CRT powers off)</span>
     <div class="device">
       <a class="deviceScreen"><span class="screenGlass"><span class="screenIdle">SIGNAL OK</span></span></a>
       <div class="deviceMeta"><span>PRJ 02</span>
-        <span class="ledStrip"><i></i><i></i><i></i><i></i><i></i></span>
-        <span class="devicePort fx fxPort" data-state="cut" style="--pulse:3" onclick="flip(this,'linked','cut')"></span>
-        <i class="fxTag"></i></div>
+        <span class="ledStrip"><i></i><i></i><i></i><i></i><i></i></span></div>
+      <span class="devicePort fx fxPort" data-state="cut" data-states="linked cut" style="--pulse:3"
+        role="switch" aria-checked="false" tabindex="0" aria-label="PRJ 02 feed plug"
+        onclick="flip(this,'linked','cut')"><i class="fxRing"></i></span>
+      <i class="fxTag"></i>
     </div>
   </div>
 </div>
 
 <div class="row">
   <div class="case storCase" id="more">
-    <span class="label">ARCHIVE · datastore node; each card gets a sync stream</span>
+    <span class="label">ARCHIVE · latching kill button; each card gets a sync stream</span>
     <div>
       <div class="hatch">
         <span class="hatchLabel">EXT STORAGE</span>
-        <span class="fx fxArchive" data-state="syncing" style="--pulse:12" onclick="flip(this,'syncing','offline')"></span>
+        <span class="fx fxArchive" data-state="syncing" data-states="syncing offline" style="--pulse:12"
+          role="switch" aria-checked="true" tabindex="0" aria-label="archive datastore power"
+          onclick="flip(this,'syncing','offline')"><i class="fxRing"></i></span>
         <i class="fxTag"></i>
       </div>
       <a class="repoCard"><b>leetcode_helper_extension</b>Repo card mock</a>
@@ -179,17 +188,30 @@ states are driven by the bysters through the fixture store.</p>
 
 <div class="row">
   <div class="case">
-    <span class="label">NEON · the email is the sign; pull the lever (zap)</span>
+    <span class="label">NEON · the email is the sign; slide the lever (zap)</span>
     <div class="neonWrap">
       <a class="contactMail" href="#">someone@example.com</a>
-      <span class="fx fxNeon" data-state="on" style="--pulse:13" onclick="flip(this,'on','off')"></span>
+      <span class="fx fxNeon" data-state="on" data-states="on off" style="--pulse:13"
+        role="switch" aria-checked="true" tabindex="0" aria-label="contact sign lever"
+        onclick="flip(this,'on','off')"><i class="fxRing"></i></span>
       <i class="fxTag"></i>
     </div>
   </div>
 </div>
 
 <script>
-  function flip(el, a, b) { el.dataset.state = el.dataset.state === a ? b : a; }
+  // a = the healthy first state, so aria-checked mirrors it like the site does
+  function flip(el, a, b) {
+    el.dataset.state = el.dataset.state === a ? b : a;
+    el.setAttribute("aria-checked", String(el.dataset.state === a));
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const el = e.target.closest(".fx");
+    if (!el) return;
+    e.preventDefault();
+    el.click();
+  });
 </script>
 </body>
 </html>

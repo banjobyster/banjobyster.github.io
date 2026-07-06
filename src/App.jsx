@@ -68,9 +68,11 @@ function App() {
             <i />
           </span>
           <span className="portLabel mono">PORT DATA-01</span>
-          {/* The intake valve: the head of the whole machine. Close it and
-              the feed dies page-wide (pipeline starves, ports dim, the neon
-              browns out) until the operator, or you, reopens it. */}
+          {/* The intake breaker: the head of the whole machine. Slam the
+              handle down and the feed dies page-wide (pipeline starves,
+              ports dim, the neon browns out) until someone reopens it.
+              Checked mirrors the healthy first state; the overlay keeps it
+              in sync with the fixture store. */}
           <span
             className="fx fxIntake"
             data-fixture="intake"
@@ -78,11 +80,14 @@ function App() {
             data-states="open closed"
             data-state="open"
             data-transitions="open>closed closed>open"
-            role="button"
+            role="switch"
+            aria-checked="true"
             tabIndex={0}
-            aria-label="data intake: click to close or open the feed"
+            aria-label="data intake breaker"
             style={{ "--pulse": 0 }}
-          />
+          >
+            <i className="fxRing" aria-hidden="true" />
+          </span>
           <i className="fxTag mono" aria-hidden="true" />
           <span className="portRule" aria-hidden="true" />
           <span className={`stamp mono stamp-${state}`} role="status">
@@ -126,11 +131,14 @@ function App() {
             data-states="flowing jammed"
             data-state="flowing"
             data-transitions="flowing>jammed jammed>flowing"
-            role="button"
+            role="switch"
+            aria-checked="true"
             tabIndex={0}
-            aria-label="deploy pipeline: flip the lever to halt or run"
+            aria-label="deploy pipeline switch"
             style={{ "--pulse": 1 }}
-          />
+          >
+            <i className="fxRing" aria-hidden="true" />
+          </span>
           <i className="fxTag mono" aria-hidden="true" />
         </div>
 
@@ -182,8 +190,8 @@ function App() {
         <div className="hatch">
           <span className="hatchGrille" aria-hidden="true" />
           <span className="hatchLabel mono">EXT STORAGE</span>
-          {/* The archive datastore: every repo syncs to this node. Push the
-              button to knock it offline; the engineer brings it back. */}
+          {/* The archive datastore: every repo syncs to this node. Latch the
+              kill button to knock it offline; the engineer brings it back. */}
           <span
             className="fx fxArchive"
             data-fixture="archive"
@@ -191,11 +199,14 @@ function App() {
             data-states="syncing offline"
             data-state="syncing"
             data-transitions="syncing>offline offline>syncing"
-            role="button"
+            role="switch"
+            aria-checked="true"
             tabIndex={0}
-            aria-label="archive datastore: push to knock offline or resync"
+            aria-label="archive datastore power"
             style={{ "--pulse": 12 }}
-          />
+          >
+            <i className="fxRing" aria-hidden="true" />
+          </span>
           <i className="fxTag mono" aria-hidden="true" />
         </div>
         <div className="repoGrid" data-state={state}>
@@ -258,7 +269,7 @@ function App() {
         </h2>
         <div className="contactBody" data-walk>
           {/* The contact neon: the email IS the sign, lit by the last of the
-              feed. The pull lever douses it; Nib (or you) relights it. */}
+              feed. The slide lever douses it; Nib (or you) relights it. */}
           <div className="neonWrap">
             <a className="contactMail" href={`mailto:${EMAIL}`}>
               {EMAIL}
@@ -270,11 +281,14 @@ function App() {
               data-states="on off"
               data-state="on"
               data-transitions="on>off off>on"
-              role="button"
+              role="switch"
+              aria-checked="true"
               tabIndex={0}
-              aria-label="contact sign: pull the lever to douse or relight"
+              aria-label="contact sign lever"
               style={{ "--pulse": 13 }}
-            />
+            >
+              <i className="fxRing" aria-hidden="true" />
+            </span>
             <i className="fxTag mono" aria-hidden="true" />
           </div>
           <div className="contactLinks">
