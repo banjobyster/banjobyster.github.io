@@ -518,6 +518,13 @@
   transition-delay: calc(var(--i, 0) * 60ms);
 }
 
+/* the "vibe coded" disclosure chip: same plate, dashed and italic so it
+   reads as an annotation rather than a technology */
+.deviceTags li.tagVibe {
+  border-style: dashed;
+  font-style: italic;
+}
+
 /* Power-on: LEDs light in sequence, screen brightens, tags tint. */
 .device:hover .ledStrip i,
 .device:focus-within .ledStrip i {

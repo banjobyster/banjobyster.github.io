@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FALLBACK, EXCLUDE_REPOS } from "../data/projects";
+import { FALLBACK, EXCLUDE_REPOS, featuredCompare } from "../data/projects";
 import { fetchManifest, coverUrl, listRepos } from "../lib/github";
 
 // Repo-driven data hook.
@@ -24,11 +24,12 @@ function buildFeatured(repo, m) {
     accent: m.accent ?? "#C1A1D3",
     tags: m.tags,
     order: m.order ?? 999,
+    vibeCoded: m.vibeCoded === true,
   };
 }
 
 export function useProjects() {
-  const [featured, setFeatured] = useState(FALLBACK);
+  const [featured, setFeatured] = useState(() => [...FALLBACK].sort(featuredCompare));
   const [repos, setRepos] = useState([]);
   const [state, setState] = useState("loading"); // loading | ready | error
 
@@ -61,7 +62,7 @@ export function useProjects() {
         else more.push(repo);
       }
 
-      feat.sort((a, b) => a.order - b.order);
+      feat.sort(featuredCompare);
       more.sort(
         (a, b) =>
           b.stargazers_count - a.stargazers_count ||

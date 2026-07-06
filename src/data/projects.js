@@ -12,6 +12,12 @@
 
 export const GITHUB_USER = "banjobyster";
 
+// Featured ordering policy: vibe-coded projects (project.json `vibeCoded:
+// true`) sort to the END, everything else by its manifest `order`. Shared by
+// the live repo-driven list and the FALLBACK below so both orders agree.
+export const featuredCompare = (a, b) =>
+  (a.vibeCoded === true) - (b.vibeCoded === true) || (a.order ?? 999) - (b.order ?? 999);
+
 // Repos never shown in "More on GitHub" (the site itself + the profile-readme repo).
 export const EXCLUDE_REPOS = ["banjobyster.github.io", "banjobyster"];
 

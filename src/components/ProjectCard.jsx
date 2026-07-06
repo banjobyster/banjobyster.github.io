@@ -12,6 +12,7 @@ export default function ProjectCard({
   link,
   accent = "#C1A1D3",
   tags,
+  vibeCoded = false,
   index = 0,
 }) {
   const unit = String(index + 1).padStart(2, "0");
@@ -70,13 +71,20 @@ export default function ProjectCard({
         </h3>
         {tagline ? <p className="deviceTagline">{tagline}</p> : null}
         <p className="deviceDesc">{renderText(description, accent)}</p>
-        {tags?.length ? (
+        {tags?.length || vibeCoded ? (
           <ul className="deviceTags mono">
-            {tags.map((t, i) => (
+            {(tags ?? []).map((t, i) => (
               <li key={t} style={{ "--i": i }}>
                 {t}
               </li>
             ))}
+            {/* project.json `vibeCoded: true` badges the card alongside its
+                languages and sinks it to the end of the featured order */}
+            {vibeCoded ? (
+              <li className="tagVibe" style={{ "--i": tags?.length ?? 0 }}>
+                vibe coded
+              </li>
+            ) : null}
           </ul>
         ) : null}
       </div>
